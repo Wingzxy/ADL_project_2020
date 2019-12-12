@@ -16,7 +16,6 @@ class UrbanSound8KDataset(data.Dataset):
         if self.mode == 'LMC':
             # Log-mel spectrogram, chroma, spectral contrast and toonetz
             # Edit here to load and concatenate the neccessary features to
-            # print("Undefined")
             # create the LMC feature
 
             log_mel = self.dataset[index]['features']['logmelspec']
@@ -30,8 +29,8 @@ class UrbanSound8KDataset(data.Dataset):
         elif self.mode == 'MC':
             # Edit here to load and concatenate the neccessary features to
             # MFCC, chroma, spectral contrast and toonetz
-            # print("Undefined")
             # create the MC feature
+
             mfcc = self.dataset[index]['features']['mfcc']
             chroma = self.dataset[index]['features']['chroma']
             spectral_contrast = self.dataset[index]['features']['spectral_contrast']
@@ -42,14 +41,17 @@ class UrbanSound8KDataset(data.Dataset):
 
         elif self.mode == 'MLMC':
             # Edit here to load and concatenate the neccessary features to
-            print("Undefined")
             # create the MLMC feature
+
             mfcc = self.dataset[index]['features']['mfcc']
-            tonnetz = self.dataset[index]['features']['tonnetz']
             log_mel = self.dataset[index]['features']['logmelspec']
-            feature = np.concatenate((log_mel, mfcc, tonnetz), axis=0)
+            chroma = self.dataset[index]['features']['chroma']
+            spectral_contrast = self.dataset[index]['features']['spectral_contrast']
+            tonnetz = self.dataset[index]['features']['tonnetz']
+
+            feature = np.concatenate((mfcc, log_mel, chroma, spectral_contrast, tonnetz), axis=0)
             feature = torch.from_numpy(feature.astype(np.float32)).unsqueeze(0)
-       
+
         label = self.dataset[index]['classID']
         classname = self.dataset[index]['class']
         fname = self.dataset[index]['filename']
