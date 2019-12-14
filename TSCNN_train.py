@@ -21,11 +21,11 @@ from pathlib import Path
 torch.backends.cudnn.benchmark = True
 
 parser = argparse.ArgumentParser(
-    description="Train a CNN on UrbanSound8KDataset",
+    description="Train a TSCNN on UrbanSound8KDataset",
     formatter_class=argparse.ArgumentDefaultsHelpFormatter,
 )
-parser.add_argument("--log-dir", default=Path("logs"), type=Path)
-parser.add_argument("--learning-rate", default=1e-2, type=float, help="Learning rate")
+parser.add_argument("--log-dir", default=Path("TSCNN_logs"), type=Path)
+parser.add_argument("--learning-rate", default=1e-3, type=float, help="Learning rate")
 parser.add_argument(
     "--batch-size",
     default=32,
@@ -65,7 +65,7 @@ parser.add_argument(
 )
 parser.add_argument(
     "--dropout",
-    default=0.0,
+    default=0.5,
     type=float,
     help="Dropout",
 )
