@@ -6,13 +6,12 @@ from torch.nn import functional as F
 class FullyConvNet(nn.Module):
     def __init__(self, height: int, width: int, channels: int, class_count: int, dropout: float):
         super().__init__()
-        self.input_shape = ImageShape(height=height, width=width, channels=channels)
         self.class_count = class_count
 
         self.dropout=nn.Dropout(p=dropout)
 
         self.conv1 = nn.Conv2d(
-            in_channels=self.input_shape.channels,
+            in_channels=channels,
             out_channels=32,
             kernel_size=(3, 3),
             padding=(1, 1),

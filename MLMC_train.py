@@ -24,8 +24,6 @@ parser = argparse.ArgumentParser(
     description="Train a CNN on UrbanSound8KDataset",
     formatter_class=argparse.ArgumentDefaultsHelpFormatter,
 )
-default_dataset_dir = Path.home() / ".cache" / "torch" / "datasets"
-parser.add_argument("--dataset-root", default=default_dataset_dir)
 parser.add_argument("--log-dir", default=Path("logs"), type=Path)
 parser.add_argument("--learning-rate", default=1e-2, type=float, help="Learning rate")
 parser.add_argument(
@@ -71,12 +69,6 @@ parser.add_argument(
     type=float,
     help="Dropout",
 )
-parser.add_argument(
-    "--network-type",
-    default=0.0,
-    type=str,
-    help="The network type: LMCNet/MCNet/MLMCNet/TSCNN",
-)
 
 
 if torch.cuda.is_available():
@@ -86,32 +78,26 @@ else:
 
 
 def main(args):
-    transform = transforms.ToTensor()
-    augmented_transform = transforms.Compose([transform,])
-    
-    args.dataset_root.mkdir(parents=True, exist_ok=True)
-    train_dataset = torchvision.datasets.CIFAR10(
-        args.dataset_root, train=True, download=True, transform=augmented_transform
-    )
-    test_dataset = torchvision.datasets.CIFAR10(
-        args.dataset_root, train=False, download=False, transform=transform
-    )
-    train_loader = torch.utils.data.DataLoader(
-        train_dataset,
+
+    MLMC_train_loader = torch.utils.data.DataLoader(
+        UrbanSound8KDataset('UrbanSound8K_train.pkl', "MLMC"),
         shuffle=True,
         batch_size=args.batch_size,
         pin_memory=True,
         num_workers=args.worker_count,
     )
-    test_loader = torch.utils.data.DataLoader(
-        test_dataset,
+
+
+    MLMC_test_loader = torch.utils.data.DataLoader(
+        UrbanSound8KDataset('UrbanSound8K_test.pkl', "MLMC"),
         shuffle=False,
         batch_size=args.batch_size,
         num_workers=args.worker_count,
         pin_memory=True,
     )
 
-    model = CNN(height=32, width=32, channels=3, class_count=10,dropout=args.dropout)
+
+    model = MLMCNet(height=145, width=41, channels=1, class_count=10,dropout=args.dropout)
 
     ## TASK 8: Redefine the criterion to be softmax cross entropy
     criterion = nn.CrossEntropyLoss()
