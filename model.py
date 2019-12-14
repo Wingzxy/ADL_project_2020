@@ -6,6 +6,9 @@ from FCN import FullyConvNet
 class LMCNet(nn.Module):
     def __init__(self, input_size, output_size, num_channels, kernel_size, dropout):
         super(LMCNet, self).__init__()
+
+        self.dropout=nn.Dropout(p=dropout)
+
         self.fcn = FullyConvNet(input_size, num_channels, kernel_size, dropout=dropout)
 
         self.fc1 = nn.Linear(15488, 1024)
@@ -33,6 +36,9 @@ class LMCNet(nn.Module):
 class MCNet(nn.Module):
     def __init__(self, input_size, output_size, num_channels, kernel_size, dropout):
         super(MCNet, self).__init__()
+
+        self.dropout=nn.Dropout(p=dropout)
+
         self.fcn = FullyConvNet(input_size, num_channels, kernel_size, dropout=dropout)
 
         self.fc1 = nn.Linear(15488, 1024)
@@ -60,6 +66,9 @@ class MCNet(nn.Module):
 class MLMCNet(nn.Module):
     def __init__(self, input_size, output_size, num_channels, kernel_size, dropout):
         super(MLMCNet, self).__init__()
+
+        self.dropout=nn.Dropout(p=dropout)
+
         self.fcn = FullyConvNet(input_size, num_channels, kernel_size, dropout=dropout)
 
         self.fc1 = nn.Linear(49728, 1024)
@@ -88,6 +97,9 @@ class MLMCNet(nn.Module):
 class TSCNN(nn.Module):
     def __init__(self, input_size, output_size, num_channels, kernel_size, dropout):
         super(TSCNN, self).__init__()
+
+        self.dropout=nn.Dropout(p=dropout)
+        
         self.branch_1 = LMCNet(input_size, num_channels, kernel_size, dropout=dropout)
         self.branch_2 = MCNet(input_size, num_channels, kernel_size, dropout=dropout)
 

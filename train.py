@@ -21,7 +21,7 @@ from pathlib import Path
 torch.backends.cudnn.benchmark = True
 
 parser = argparse.ArgumentParser(
-    description="Train a simple CNN on CIFAR-10",
+    description="Train a CNN on UrbanSound8KDataset",
     formatter_class=argparse.ArgumentDefaultsHelpFormatter,
 )
 default_dataset_dir = Path.home() / ".cache" / "torch" / "datasets"
@@ -30,7 +30,7 @@ parser.add_argument("--log-dir", default=Path("logs"), type=Path)
 parser.add_argument("--learning-rate", default=1e-2, type=float, help="Learning rate")
 parser.add_argument(
     "--batch-size",
-    default=128,
+    default=32,
     type=int,
     help="Number of images within each mini-batch",
 )
@@ -66,36 +66,17 @@ parser.add_argument(
     help="Number of worker processes used to load data.",
 )
 parser.add_argument(
-    "--data-aug-hflip",
-    action='store_true',
-#    action='store_true' automatically assigns true to the flag once seen. If flag is not seen, it is false. Similar to having below and passing true with the flag.
-#    default=False,
-#    type=bool,
-    help="Horizantal flipping for online data augmentation",
-)
-parser.add_argument(
-    "--data-aug-brightness",
-    default=0.0,
-    type=float,
-    help="Brightness jittering for online data augmentation",
-)
-parser.add_argument(
-    "--data-aug-saturation",
-    default=0.0,
-    type=float,
-    help="Saturation jittering for online data augmentation",
-)
-parser.add_argument(
     "--dropout",
     default=0.0,
     type=float,
     help="Dropout",
 )
-
-class ImageShape(NamedTuple):
-    height: int
-    width: int
-    channels: int
+parser.add_argument(
+    "--network-type",
+    default=0.0,
+    type=str,
+    help="The network type: LMCNet/MCNet/MLMCNet/TSCNN",
+)
 
 
 if torch.cuda.is_available():
@@ -106,12 +87,8 @@ else:
 
 def main(args):
     transform = transforms.ToTensor()
-    augmented_transform = transforms.Compose([
-                                   transforms.RandomHorizontalFlip() if args.data_aug_hflip else lambda x:x,
-                                   transforms.ColorJitter(brightness=args.data_aug_brightness),
-                                   transforms.ColorJitter(saturation=args.data_aug_saturation),
-                                   transform,
-                                   ])
+    augmented_transform = transforms.Compose([transform,])
+    
     args.dataset_root.mkdir(parents=True, exist_ok=True)
     train_dataset = torchvision.datasets.CIFAR10(
         args.dataset_root, train=True, download=True, transform=augmented_transform
