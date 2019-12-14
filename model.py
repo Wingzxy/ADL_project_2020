@@ -23,6 +23,13 @@ class LMCNet(nn.Module):
 
         return x
 
+    @staticmethod
+    def initialise_layer(layer):
+        if hasattr(layer, "bias"):
+            nn.init.zeros_(layer.bias)
+        if hasattr(layer, "weight"):
+            nn.init.kaiming_normal_(layer.weight)
+
 class MCNet(nn.Module):
     def __init__(self, input_size, output_size, num_channels, kernel_size, dropout):
         super(MCNet, self).__init__()
@@ -43,6 +50,13 @@ class MCNet(nn.Module):
 
         return x
 
+    @staticmethod
+    def initialise_layer(layer):
+        if hasattr(layer, "bias"):
+            nn.init.zeros_(layer.bias)
+        if hasattr(layer, "weight"):
+            nn.init.kaiming_normal_(layer.weight)
+
 class MLMCNet(nn.Module):
     def __init__(self, input_size, output_size, num_channels, kernel_size, dropout):
         super(MLMCNet, self).__init__()
@@ -62,6 +76,13 @@ class MLMCNet(nn.Module):
         x=F.softmax(self.fc2(x))
 
         return x
+
+    @staticmethod
+    def initialise_layer(layer):
+        if hasattr(layer, "bias"):
+            nn.init.zeros_(layer.bias)
+        if hasattr(layer, "weight"):
+            nn.init.kaiming_normal_(layer.weight)
 
 # WORK IN PROGRESS
 # class TSCNN(nn.Module):
