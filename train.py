@@ -13,7 +13,7 @@ from torch.optim.optimizer import Optimizer
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms
-from model import LMCNet, MCNet, MLMCNet
+from model import LMCNet, MCNet, MLMCNet, TSCNN
 
 import argparse
 from pathlib import Path
