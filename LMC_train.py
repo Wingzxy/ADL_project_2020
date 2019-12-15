@@ -158,30 +158,19 @@ class Trainer:
         for epoch in range(start_epoch, epochs):
             self.model.train()
             data_load_start_time = time.time()
-            for batch, labels in self.train_loader:
+            for i, (batch, labels, filenames, labelnames) in enumerate(self.train_loader):
                 batch = batch.to(self.device)
                 labels = labels.to(self.device)
                 data_load_end_time = time.time()
 
-
-                ## TASK 1: Compute the forward pass of the model, print the output shape
-                ##         and quit the program
                 logits = self.model.forward(batch)
 
-                ## TASK 7: Rename `output` to `logits`, remove the output shape printing
-                ##         and get rid of the `import sys; sys.exit(1)`
-
-                ## TASK 9: Compute the loss using self.criterion and
-                ##         store it in a variable called `loss`
                 loss = self.criterion(logits,labels)
 
-                ## TASK 10: Compute the backward pass
                 loss.backward()
 
-                ## TASK 12: Step the optimizer and then zero out the gradient buffers.
                 self.optimizer.step()
                 self.optimizer.zero_grad()
-
 
                 with torch.no_grad():
                     preds = logits.argmax(-1)
@@ -236,21 +225,30 @@ class Trainer:
         )
 
     def validate(self):
+        logits = np.array([])
         results = {"preds": [], "labels": []}
         total_loss = 0
         self.model.eval()
 
         # No need to track gradients for validation, we're not optimizing.
-        with torch.no_grad():
-            for batch, labels in self.val_loader:
-                batch = batch.to(self.device)
-                labels = labels.to(self.device)
-                logits = self.model(batch)
-                loss = self.criterion(logits, labels)
-                total_loss += loss.item()
-                preds = logits.argmax(dim=-1).cpu().numpy()
-                results["preds"].extend(list(preds))
-                results["labels"].extend(list(labels.cpu().numpy()))
+        # with torch.no_grad():
+        #     for i, (batch, labels, filenames, labelnames) in enumerate(self.val_loader):
+        #         batch_size=len(labels)
+        #
+        #         batch = batch.to(self.device)
+        #         labels = labels.to(self.device)
+        #         logits = self.model(batch)
+        #         loss = self.criterion(logits, labels)
+        #         total_loss += loss.item()
+        #
+        #         filenames_array = filenames.cpu().numpy()
+        #         for j in range(0,batch_size):
+        #             filename =filenames_array[j]
+        #             logits[filename]=logits[filename] if logits[filename] is not None else
+
+                # preds = logits.argmax(dim=-1).cpu().numpy()
+                # results["preds"].extend(list(preds))
+                # results["labels"].extend(list(labels.cpu().numpy()))
 
         accuracy = compute_accuracy(
             np.array(results["labels"]), np.array(results["preds"])
@@ -284,7 +282,6 @@ def compute_class_accuracy(labels: np.ndarray, preds: np.ndarray):
     assert len(labels) == len(preds)
     targets=torch.from_numpy(labels).float().to(DEVICE)
     predictions=torch.from_numpy(preds).float().to(DEVICE)
-    classes = ["airplane","automobile","bird","cat","deer","dog","frog","horse","ship","truck"]
     for c in range(0,10):
         mask=lambda tensor:tensor==c
         index_of_targets_with_class_c=torch.nonzero(mask(targets))
@@ -301,7 +298,7 @@ def compute_class_accuracy(labels: np.ndarray, preds: np.ndarray):
                     continue
             class_accuracy=count/number_of_class_c_targets
 
-        txt = "Accuracy for class "+classes[c]+" (Class "+str(c)+") is: "+str(class_accuracy*100)
+        txt = "Accuracy for class "+str(c)+") is: "+str(class_accuracy*100)
         print(txt)
 
 def get_summary_writer_log_dir(args: argparse.Namespace) -> str:
