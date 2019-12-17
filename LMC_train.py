@@ -298,6 +298,8 @@ def compute_accuracy(labels: Union[torch.Tensor, np.ndarray], preds: Union[torch
     assert len(labels) == len(preds)
     return float((labels == preds).sum()) / len(labels)
 
+
+# CLASS 1 AND CLASS 6 HAD ACCURACIES OF 0. THIS IS NOT NORMAL. LOOK AT THIS FUNCTION
 def compute_class_accuracy(labels: np.ndarray, preds: np.ndarray):
     assert len(labels) == len(preds)
     targets=torch.from_numpy(labels).float().to(DEVICE)
