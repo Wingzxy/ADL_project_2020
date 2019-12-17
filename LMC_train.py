@@ -14,6 +14,7 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms
 from model import LMCNet, MCNet, MLMCNet, TSCNN
+from dataset import UrbanSound8KDataset
 
 import argparse
 from pathlib import Path
@@ -78,7 +79,7 @@ else:
 
 
 def main(args):
-    LMC_train_loader = torch.utils.data.DataLoader(
+    train_loader = torch.utils.data.DataLoader(
         UrbanSound8KDataset('UrbanSound8K_train.pkl', "LMC"),
         shuffle=True,
         batch_size=args.batch_size,
@@ -88,7 +89,7 @@ def main(args):
 
 
 
-    LMC_test_loader = torch.utils.data.DataLoader(
+    test_loader = torch.utils.data.DataLoader(
         UrbanSound8KDataset('UrbanSound8K_test.pkl', "LMC"),
         shuffle=False,
         batch_size=args.batch_size,
@@ -225,30 +226,50 @@ class Trainer:
         )
 
     def validate(self):
-        logits = np.array([])
+        dict = {}
         results = {"preds": [], "labels": []}
         total_loss = 0
         self.model.eval()
 
         # No need to track gradients for validation, we're not optimizing.
-        # with torch.no_grad():
-        #     for i, (batch, labels, filenames, labelnames) in enumerate(self.val_loader):
-        #         batch_size=len(labels)
-        #
-        #         batch = batch.to(self.device)
-        #         labels = labels.to(self.device)
-        #         logits = self.model(batch)
-        #         loss = self.criterion(logits, labels)
-        #         total_loss += loss.item()
-        #
-        #         filenames_array = filenames.cpu().numpy()
-        #         for j in range(0,batch_size):
-        #             filename =filenames_array[j]
-        #             logits[filename]=logits[filename] if logits[filename] is not None else
+        with torch.no_grad():
+            for i, (batch, labels, filenames, labelnames) in enumerate(self.val_loader):
+                batch = batch.to(self.device)
+                labels = labels.to(self.device)
+                logits = self.model(batch)
+                # loss = self.criterion(logits, labels)
+                # total_loss += loss.item()
 
-                # preds = logits.argmax(dim=-1).cpu().numpy()
-                # results["preds"].extend(list(preds))
-                # results["labels"].extend(list(labels.cpu().numpy()))
+                logits_array=logits.cpu().numpy()
+                labels_array=labels.cpu().numpy()
+                filenames_array=filenames.cpu().numpy()
+                batch_size = len(labels)
+                for j in range(0,batch_size):
+                    filename=filenames_array[j]
+                    if filename in dict:
+                        count = dict[filename]['count']
+                        dict[filename]['average']=(count*dict[filename]['average']+logits_array[j])/(count+1)
+                        dict[filename]['count']+=1
+                    else:
+                        dict[filename]={}
+                        dict[filename]['average']=logits_array[j]
+                        dict[filename]['label']=labels_array[j]
+                        dict[filename]['count']=1
+
+        labels_list=[dict[k]['label'] for k,v in dict.items()]
+        logits_list=[dict[k]['average'] for k,v in dict.items()]
+        labels_array=np.hstack(labels_list)
+        logits_array=np.vstack(logits_list)
+        labels=torch.from_numpy(labels_array).to(self.device)
+        logits=torch.from_numpy(logits_array).to(self.device)
+
+        loss = self.criterion(logits, labels)
+        total_loss += loss.item()
+
+        # preds = logits.argmax(dim=-1).cpu().numpy()
+        preds = np.argmax(logits_array,dim=-1)
+        results["preds"].extend(list(preds))
+        results["labels"].extend(list(labels_array))
 
         accuracy = compute_accuracy(
             np.array(results["labels"]), np.array(results["preds"])
@@ -319,9 +340,6 @@ def get_summary_writer_log_dir(args: argparse.Namespace) -> str:
                          f"bs={args.batch_size}_"
                          f"lr={args.learning_rate}_"
                          f"momentum=0.9_"
-                         f"brightness={args.data_aug_brightness}_"
-                         f"saturation={args.data_aug_saturation}_" +
-                         ("hflip_" if args.data_aug_hflip else "") +
                          f"run_"
                          )
     i = 0
