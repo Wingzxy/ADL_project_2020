@@ -35,7 +35,7 @@ parser.add_argument(
 )
 parser.add_argument(
     "--epochs",
-    default=50,
+    default=20,
     type=int,
     help="Number of epochs (passes through the entire dataset) to train for",
 )
@@ -242,10 +242,9 @@ class Trainer:
 
                 logits_array=logits.cpu().numpy()
                 labels_array=labels.cpu().numpy()
-                filenames_array=filenames.cpu().numpy()
-                batch_size = len(labels)
+                batch_size = len(filenames)
                 for j in range(0,batch_size):
-                    filename=filenames_array[j]
+                    filename=filenames[j]
                     if filename in dict:
                         count = dict[filename]['count']
                         dict[filename]['average']=(count*dict[filename]['average']+logits_array[j])/(count+1)
@@ -267,7 +266,7 @@ class Trainer:
         total_loss += loss.item()
 
         # preds = logits.argmax(dim=-1).cpu().numpy()
-        preds = np.argmax(logits_array,dim=-1)
+        preds = np.argmax(logits_array,axis=-1)
         results["preds"].extend(list(preds))
         results["labels"].extend(list(labels_array))
 
