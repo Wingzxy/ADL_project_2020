@@ -26,7 +26,11 @@ class FullyConvNet(nn.Module):
         )
         self.conv2_bn = nn.BatchNorm2d(32)
 
-        self.pool = nn.MaxPool2d(kernel_size=(2, 2), stride=(2, 2))
+        self.pool = nn.MaxPool2d(
+            kernel_size=(2, 2),
+            padding=(1,1),
+            stride=(2, 2)
+        )
 
         self.conv3 = nn.Conv2d(
             in_channels=32,
