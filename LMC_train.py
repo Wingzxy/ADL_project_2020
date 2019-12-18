@@ -88,7 +88,6 @@ def main(args):
     )
 
 
-
     test_loader = torch.utils.data.DataLoader(
         UrbanSound8KDataset('UrbanSound8K_test.pkl', "LMC"),
         shuffle=False,
@@ -273,7 +272,7 @@ class Trainer:
         accuracy = compute_accuracy(
             np.array(results["labels"]), np.array(results["preds"])
         )
-        average_loss = total_loss / len(self.val_loader)
+        average_loss = total_loss / len(labels_list)
         compute_class_accuracy(np.array(results["labels"]), np.array(results["preds"]))
 
         self.summary_writer.add_scalars(
@@ -305,7 +304,7 @@ def compute_class_accuracy(labels: np.ndarray, preds: np.ndarray):
     targets=torch.from_numpy(labels).float().to(DEVICE)
     predictions=torch.from_numpy(preds).float().to(DEVICE)
     for c in range(0,10):
-        mask=lambda tensor:tensor==c
+        mask=lambda x:x==c
         index_of_targets_with_class_c=torch.nonzero(mask(targets))
         index_of_preds_with_class_c=torch.nonzero(mask(predictions))
         number_of_class_c_targets=len(index_of_targets_with_class_c)
