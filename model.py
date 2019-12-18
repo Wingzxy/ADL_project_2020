@@ -110,7 +110,7 @@ class TSCNN(nn.Module):
         x1=self.branch_1(lmc)
         x2=self.branch_2(mc)
 
-        result = torch.mean(torch.cat((x1,x2), 2),2)
+        result = torch.mean(torch.stack((x1,x2), dim=2),dim=2)
 
         return result
 

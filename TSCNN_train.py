@@ -25,7 +25,7 @@ parser = argparse.ArgumentParser(
     description="Train a LMCNet on UrbanSound8KDataset",
     formatter_class=argparse.ArgumentDefaultsHelpFormatter,
 )
-parser.add_argument("--log-dir", default=Path("LMC_logs"), type=Path)
+parser.add_argument("--log-dir", default=Path("TSCNN_logs"), type=Path)
 parser.add_argument("--learning-rate", default=1e-3, type=float, help="Learning rate")
 parser.add_argument(
     "--batch-size",
@@ -102,7 +102,7 @@ def main(args):
              pin_memory=True)
 
 
-    model = LMCNet(height=85, width=41, channels=1, class_count=10,dropout=args.dropout)
+    model = TSCNN(height=85, width=41, channels=1, class_count=10,dropout=args.dropout)
 
     ## TASK 8: Redefine the criterion to be softmax cross entropy
     criterion = nn.CrossEntropyLoss()
@@ -163,13 +163,16 @@ class Trainer:
         for epoch in range(start_epoch, epochs):
             self.model.train()
             data_load_start_time = time.time()
-            for i, (batch, labels, filenames, labelnames) in enumerate(self.train_loader):
-                LMC_batch = batch[0].to(self.device)
-                MC_batch = batch[1].to(self.device)
+            for i, (LMC_data, MC_data) in enumerate(self.train_loader):
+                LMC_batch, LMC_labels, LMC_filenames, LMC_labelnames=LMC_data
+                MC_batch, MC_labels, MC_filenames, MC_labelnames=MC_data
+
+                LMC_batch = LMC_batch.to(self.device)
+                MC_batch = MC_batch.to(self.device)
                 data_load_end_time = time.time()
-                labels=labels[0]
-                filenames=filenames[0]
-                labelnames=labelnames[0]
+                labels=LMC_labels
+                filenames=LMC_filenames
+                labelnames=LMC_labelnames
 
                 labels = labels.to(self.device)
                 logits = self.model.forward(LMC_batch,MC_batch)
@@ -241,12 +244,16 @@ class Trainer:
 
         # No need to track gradients for validation, we're not optimizing.
         with torch.no_grad():
-            for i, (batch, labels, filenames, labelnames) in enumerate(self.val_loader):
-                LMC_batch = batch[0].to(self.device)
-                MC_batch = batch[1].to(self.device)
-                labels=labels[0]
-                filenames=filenames[0]
-                labelnames=labelnames[0]
+            for i, (LMC_data, MC_data) in enumerate(self.train_loader):
+                LMC_batch, LMC_labels, LMC_filenames, LMC_labelnames=LMC_data
+                MC_batch, MC_labels, MC_filenames, MC_labelnames=MC_data
+
+                LMC_batch = LMC_batch.to(self.device)
+                MC_batch = MC_batch.to(self.device)
+                data_load_end_time = time.time()
+                labels=LMC_labels
+                filenames=LMC_filenames
+                labelnames=LMC_labelnames
 
                 labels = labels.to(self.device)
                 logits = self.model(LMC_batch,MC_batch)
