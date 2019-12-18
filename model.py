@@ -22,7 +22,7 @@ class LMCNet(nn.Module):
         x=self.fcn(x)
         x=torch.flatten(x,start_dim=1)
         x=F.sigmoid(self.fc1(x))
-        x=F.softmax(self.fc2(x))
+        x=self.fc2(x)
 
         return x
 
@@ -52,7 +52,7 @@ class MCNet(nn.Module):
         x=self.fcn(x)
         x=torch.flatten(x,start_dim=1)
         x=F.sigmoid(self.fc1(x))
-        x=F.softmax(self.fc2(x))
+        x=self.fc2(x)
 
         return x
 
@@ -82,7 +82,7 @@ class MLMCNet(nn.Module):
         x=self.fcn(x)
         x=torch.flatten(x,start_dim=1)
         x=F.sigmoid(self.fc1(x))
-        x=F.softmax(self.fc2(x))
+        x=self.fc2(x)
 
         return x
 
