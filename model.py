@@ -71,7 +71,7 @@ class MLMCNet(nn.Module):
 
         self.fcn = FullyConvNet(height, width, channels, class_count, dropout=dropout)
 
-        self.fc1 = nn.Linear(49728, 1024)
+        self.fc1 = nn.Linear(26048, 1024)
         # self.fc1_bn =nn.BatchNorm1d(1024)
         self.fc2 = nn.Linear(1024, 10)
 

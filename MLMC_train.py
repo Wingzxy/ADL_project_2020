@@ -14,6 +14,7 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms
 from model import LMCNet, MCNet, MLMCNet, TSCNN
+from dataset import UrbanSound8KDataset
 
 import argparse
 from pathlib import Path
@@ -78,8 +79,7 @@ else:
 
 
 def main(args):
-
-    MLMC_train_loader = torch.utils.data.DataLoader(
+    train_loader = torch.utils.data.DataLoader(
         UrbanSound8KDataset('UrbanSound8K_train.pkl', "MLMC"),
         shuffle=True,
         batch_size=args.batch_size,
@@ -88,7 +88,7 @@ def main(args):
     )
 
 
-    MLMC_test_loader = torch.utils.data.DataLoader(
+    test_loader = torch.utils.data.DataLoader(
         UrbanSound8KDataset('UrbanSound8K_test.pkl', "MLMC"),
         shuffle=False,
         batch_size=args.batch_size,
@@ -158,30 +158,19 @@ class Trainer:
         for epoch in range(start_epoch, epochs):
             self.model.train()
             data_load_start_time = time.time()
-            for batch, labels in self.train_loader:
+            for i, (batch, labels, filenames, labelnames) in enumerate(self.train_loader):
                 batch = batch.to(self.device)
                 labels = labels.to(self.device)
                 data_load_end_time = time.time()
 
-
-                ## TASK 1: Compute the forward pass of the model, print the output shape
-                ##         and quit the program
                 logits = self.model.forward(batch)
 
-                ## TASK 7: Rename `output` to `logits`, remove the output shape printing
-                ##         and get rid of the `import sys; sys.exit(1)`
-
-                ## TASK 9: Compute the loss using self.criterion and
-                ##         store it in a variable called `loss`
                 loss = self.criterion(logits,labels)
 
-                ## TASK 10: Compute the backward pass
                 loss.backward()
 
-                ## TASK 12: Step the optimizer and then zero out the gradient buffers.
                 self.optimizer.step()
                 self.optimizer.zero_grad()
-
 
                 with torch.no_grad():
                     preds = logits.argmax(-1)
@@ -236,26 +225,54 @@ class Trainer:
         )
 
     def validate(self):
+        dict = {}
         results = {"preds": [], "labels": []}
         total_loss = 0
         self.model.eval()
 
         # No need to track gradients for validation, we're not optimizing.
         with torch.no_grad():
-            for batch, labels in self.val_loader:
+            for i, (batch, labels, filenames, labelnames) in enumerate(self.val_loader):
                 batch = batch.to(self.device)
                 labels = labels.to(self.device)
                 logits = self.model(batch)
-                loss = self.criterion(logits, labels)
-                total_loss += loss.item()
-                preds = logits.argmax(dim=-1).cpu().numpy()
-                results["preds"].extend(list(preds))
-                results["labels"].extend(list(labels.cpu().numpy()))
+                # loss = self.criterion(logits, labels)
+                # total_loss += loss.item()
+
+                logits_array=logits.cpu().numpy()
+                labels_array=labels.cpu().numpy()
+                batch_size = len(filenames)
+                for j in range(0,batch_size):
+                    filename=filenames[j]
+                    if filename in dict:
+                        count = dict[filename]['count']
+                        dict[filename]['average']=(count*dict[filename]['average']+logits_array[j])/(count+1)
+                        dict[filename]['count']+=1
+                    else:
+                        dict[filename]={}
+                        dict[filename]['average']=logits_array[j]
+                        dict[filename]['label']=labels_array[j]
+                        dict[filename]['count']=1
+
+        labels_list=[dict[k]['label'] for k,v in dict.items()]
+        logits_list=[dict[k]['average'] for k,v in dict.items()]
+        labels_array=np.hstack(labels_list)
+        logits_array=np.vstack(logits_list)
+        labels=torch.from_numpy(labels_array).to(self.device)
+        logits=torch.from_numpy(logits_array).to(self.device)
+
+        loss = self.criterion(logits, labels)
+        total_loss += loss.item()
+
+        # preds = logits.argmax(dim=-1).cpu().numpy()
+        preds = np.argmax(logits_array,axis=-1)
+        results["preds"].extend(list(preds))
+        results["labels"].extend(list(labels_array))
 
         accuracy = compute_accuracy(
             np.array(results["labels"]), np.array(results["preds"])
         )
-        average_loss = total_loss / len(self.val_loader)
+        average_loss = total_loss / len(labels_list)
         compute_class_accuracy(np.array(results["labels"]), np.array(results["preds"]))
 
         self.summary_writer.add_scalars(
@@ -280,13 +297,13 @@ def compute_accuracy(labels: Union[torch.Tensor, np.ndarray], preds: Union[torch
     assert len(labels) == len(preds)
     return float((labels == preds).sum()) / len(labels)
 
+
 def compute_class_accuracy(labels: np.ndarray, preds: np.ndarray):
     assert len(labels) == len(preds)
     targets=torch.from_numpy(labels).float().to(DEVICE)
     predictions=torch.from_numpy(preds).float().to(DEVICE)
-    classes = ["airplane","automobile","bird","cat","deer","dog","frog","horse","ship","truck"]
     for c in range(0,10):
-        mask=lambda tensor:tensor==c
+        mask=lambda x:x==c
         index_of_targets_with_class_c=torch.nonzero(mask(targets))
         index_of_preds_with_class_c=torch.nonzero(mask(predictions))
         number_of_class_c_targets=len(index_of_targets_with_class_c)
@@ -301,7 +318,7 @@ def compute_class_accuracy(labels: np.ndarray, preds: np.ndarray):
                     continue
             class_accuracy=count/number_of_class_c_targets
 
-        txt = "Accuracy for class "+classes[c]+" (Class "+str(c)+") is: "+str(class_accuracy*100)
+        txt = "Accuracy for class "+str(c)+") is: "+str(class_accuracy*100)
         print(txt)
 
 def get_summary_writer_log_dir(args: argparse.Namespace) -> str:
@@ -322,9 +339,6 @@ def get_summary_writer_log_dir(args: argparse.Namespace) -> str:
                          f"bs={args.batch_size}_"
                          f"lr={args.learning_rate}_"
                          f"momentum=0.9_"
-                         f"brightness={args.data_aug_brightness}_"
-                         f"saturation={args.data_aug_saturation}_" +
-                         ("hflip_" if args.data_aug_hflip else "") +
                          f"run_"
                          )
     i = 0
