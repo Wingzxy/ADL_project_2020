@@ -188,8 +188,11 @@ class Trainer:
                 MC_logits = self.MC_model.forward(MC_batch)
                 logits = torch.mean(torch.stack((LMC_logits,MC_logits), dim=2),dim=2)
 
-                loss = self.criterion(logits,labels)
-                loss.backward()
+                LMC_loss = self.criterion(LMC_logits,labels)
+                LMC_loss.backward()
+
+                MC_loss = self.criterion(MC_logits,labels)
+                MC_loss.backward()
 
                 self.LMC_optimizer.step()
                 self.LMC_optimizer.zero_grad()
