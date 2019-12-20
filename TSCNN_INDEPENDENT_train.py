@@ -35,7 +35,7 @@ parser.add_argument(
 )
 parser.add_argument(
     "--epochs",
-    default=20,
+    default=50,
     type=int,
     help="Number of epochs (passes through the entire dataset) to train for",
 )
@@ -193,6 +193,8 @@ class Trainer:
 
                 MC_loss = self.criterion(MC_logits,labels)
                 MC_loss.backward()
+
+                loss = self.criterion(logits,labels)
 
                 self.LMC_optimizer.step()
                 self.LMC_optimizer.zero_grad()

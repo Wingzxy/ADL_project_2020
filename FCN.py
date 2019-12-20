@@ -57,10 +57,10 @@ class FullyConvNet(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x=F.relu(self.conv1_bn(self.conv1(x)))
-        x=F.relu(self.conv2_bn(self.conv2(x)))
+        x=F.relu(self.conv2_bn(self.conv2(self.dropout(x))))
         x=self.pool(x)
         x=F.relu(self.conv3_bn(self.conv3(x)))
-        x=F.relu(self.conv4_bn(self.conv4(x)))
+        x=F.relu(self.conv4_bn(self.conv4(self.dropout(x))))
 
         return x
 

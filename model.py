@@ -21,7 +21,7 @@ class LMCNet(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x=self.fcn(x)
         x=torch.flatten(x,start_dim=1)
-        x=F.sigmoid(self.fc1(x))
+        x=F.sigmoid(self.fc1(self.dropout(x)))
         x=self.fc2(x)
 
         return x
@@ -51,7 +51,7 @@ class MCNet(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x=self.fcn(x)
         x=torch.flatten(x,start_dim=1)
-        x=F.sigmoid(self.fc1(x))
+        x=F.sigmoid(self.fc1(self.dropout(x)))
         x=self.fc2(x)
 
         return x
@@ -81,7 +81,7 @@ class MLMCNet(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x=self.fcn(x)
         x=torch.flatten(x,start_dim=1)
-        x=F.sigmoid(self.fc1(x))
+        x=F.sigmoid(self.fc1(self.dropout(x)))
         x=self.fc2(x)
 
         return x
