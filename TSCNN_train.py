@@ -257,8 +257,8 @@ class Trainer:
                 self.optimizer.step()
                 self.optimizer.zero_grad()
 
-                logits_array=logits.copy().cpu().numpy()
-                labels_array=labels.copy().cpu().numpy()
+                logits_array=logits.clone().cpu().numpy()
+                labels_array=labels.clone().cpu().numpy()
 
                 # with torch.no_grad():
                 #     preds = logits.argmax(-1)
