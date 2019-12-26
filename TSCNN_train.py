@@ -275,12 +275,12 @@ class Trainer:
 
             # self.summary_writer.add_scalar("epoch", epoch, self.step)
             if ((epoch + 1) % val_frequency) == 0:
-                self.validate()
+                self.validate(epoch)
                 # self.validate() will put the model in validation mode,
                 # so we have to switch back to train mode afterwards
                 self.model.train()
 
-    def validate(self):
+    def validate(self,epoch):
         dict = {}
         # results = {"preds": [], "labels": []}
         self.model.eval()
