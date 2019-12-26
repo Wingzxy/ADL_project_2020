@@ -257,11 +257,14 @@ class Trainer:
                 self.optimizer.step()
                 self.optimizer.zero_grad()
 
+                logits_array=logits.copy().cpu().numpy()
+                labels_array=labels.copy().cpu().numpy()
+
                 # with torch.no_grad():
                 #     preds = logits.argmax(-1)
                 #     accuracy = compute_accuracy(labels, preds)
 
-                self.train_records.append((epoch, logits.cpu().numpy(), labels.cpu().numpy()))
+                self.train_records.append((epoch, logits_array, labels_array))
                 # if ((self.step + 1) % log_frequency) == 0:
                 #     self.log_metrics(epoch, accuracy, loss, data_load_time, step_time)
                 # if ((self.step + 1) % print_frequency) == 0:
