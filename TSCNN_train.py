@@ -147,8 +147,8 @@ def main(args):
         log_frequency=args.log_frequency,
     )
 
-    LMC_records=LMC_trainer.records
-    MC_records=MC_trainer.records
+    LMC_train_records=LMC_trainer.train_records
+    MC_train_records=MC_trainer.train_records
 
     LMC_steps=LMC_trainer.step
     MC_steps=MC_trainer.step
@@ -157,16 +157,14 @@ def main(args):
     steps=LMC_steps
 
     for step in range(0,steps):
-        LMC_epoch, LMC_logits, LMC_labels, LMC_data_load_time, LMC_step_time=LMC_records[step]
-        MC_epoch, MC_logits, MC_labels, MC_data_load_time, MC_step_time=MC_records[step]
+        LMC_epoch, LMC_logits, LMC_labels=LMC_train_records[step]
+        MC_epoch, MC_logits, MC_labels=MC_train_records[step]
 
         assert LMC_epoch==MC_epoch
         epoch=LMC_epoch
 
         assert LMC_labels==MC_labels
         labels=LMC_labels
-
-        start=time.time()
 
         LMC_logits=torch.from_numpy(LMC_logits)
         MC_logits=torch.from_numpy(MC_logits)
@@ -178,18 +176,37 @@ def main(args):
         accuracy=compute_accuracy(labels,preds)
         loss = criterion(logits,labels)
 
-        end=time.time()
-
-        data_load_time=LMC_data_load_time+MC_data_load_time
-        step_time=LMC_step_time+MC_step_time+(end-start)
-
         if ((step + 1) % args.log_frequency) == 0:
-            log_metrics(summary_writer,epoch,accuracy,loss,data_load_time,step_time)
+            log_metrics(summary_writer,"train",epoch,accuracy,loss)
         if ((step + 1) % args.print_frequency) == 0:
-            print_metrics(step,epoch,accuracy,loss,data_load_time,step_time)
+            print_metrics(step,epoch,accuracy,loss)
 
+    LMC_test_records=LMC_trainer.test_records
+    MC_test_records=MC_trainer.test_records
 
+    for i in range(0,len(LMC_test_records)):
+        LMC_epoch, LMC_logits, LMC_labels=LMC_train_records[step]
+        MC_epoch, MC_logits, MC_labels=MC_train_records[step]
 
+        assert LMC_epoch==MC_epoch
+        epoch=LMC_epoch
+
+        assert LMC_labels==MC_labels
+        labels=LMC_labels
+
+        LMC_logits=torch.from_numpy(LMC_logits)
+        MC_logits=torch.from_numpy(MC_logits)
+
+        labels=torch.from_numpy(labels)
+        logits = torch.mean(torch.stack((LMC_logits,MC_logits), dim=2),dim=2)
+        preds = logits.argmax(-1)
+
+        accuracy=compute_accuracy(labels,preds)
+        loss = criterion(logits,labels)
+
+        log_metrics(summary_writer,"test",epoch,accuracy,loss)
+        step="VALIDATE PLACEHOLDER"
+        print_metrics(step,epoch,accuracy,loss)
 
     summary_writer.close()
 
@@ -212,7 +229,8 @@ class Trainer:
         self.criterion = criterion
         self.optimizer = optimizer
         self.step = 0
-        self.records= []
+        self.train_records= []
+        self.test_records=[]
 
     def train(
         self,
@@ -229,7 +247,6 @@ class Trainer:
             for i, (batch, labels, filenames, labelnames) in enumerate(self.train_loader):
                 batch = batch.to(self.device)
                 labels = labels.to(self.device)
-                data_load_end_time = time.time()
 
                 logits = self.model.forward(batch)
 
@@ -244,9 +261,7 @@ class Trainer:
                 #     preds = logits.argmax(-1)
                 #     accuracy = compute_accuracy(labels, preds)
 
-                data_load_time = data_load_end_time - data_load_start_time
-                step_time = time.time() - data_load_end_time
-                self.records.append((epoch, logits.cpu().numpy(), labels.cpu().numpy(), data_load_time, step_time))
+                self.train_records.append((epoch, logits.cpu().numpy(), labels.cpu().numpy()))
                 # if ((self.step + 1) % log_frequency) == 0:
                 #     self.log_metrics(epoch, accuracy, loss, data_load_time, step_time)
                 # if ((self.step + 1) % print_frequency) == 0:
@@ -256,105 +271,95 @@ class Trainer:
                 data_load_start_time = time.time()
 
             # self.summary_writer.add_scalar("epoch", epoch, self.step)
-            # if ((epoch + 1) % val_frequency) == 0:
-            #     self.validate()
-            #     # self.validate() will put the model in validation mode,
-            #     # so we have to switch back to train mode afterwards
-            #     self.model.train()
+            if ((epoch + 1) % val_frequency) == 0:
+                self.validate()
+                # self.validate() will put the model in validation mode,
+                # so we have to switch back to train mode afterwards
+                self.model.train()
 
-def print_metrics(step, epoch, accuracy, loss, data_load_time, step_time):
+    def validate(self):
+        dict = {}
+        # results = {"preds": [], "labels": []}
+        self.model.eval()
+
+        # No need to track gradients for validation, we're not optimizing.
+        with torch.no_grad():
+            for i, (batch, labels, filenames, labelnames) in enumerate(self.val_loader):
+                batch = batch.to(self.device)
+                labels = labels.to(self.device)
+                logits = self.model(batch)
+
+                # loss = self.criterion(logits, labels)
+                # total_loss += loss.item()
+
+                logits_array=logits.cpu().numpy()
+                labels_array=labels.cpu().numpy()
+                batch_size = len(filenames)
+                for j in range(0,batch_size):
+                    filename=filenames[j]
+                    if filename in dict:
+                        count = dict[filename]['count']
+                        dict[filename]['average']=(count*dict[filename]['average']+logits_array[j])/(count+1)
+                        dict[filename]['count']+=1
+                    else:
+                        dict[filename]={}
+                        dict[filename]['average']=logits_array[j]
+                        dict[filename]['label']=labels_array[j]
+                        dict[filename]['count']=1
+
+        labels_list=[dict[k]['label'] for k,v in dict.items()]
+        logits_list=[dict[k]['average'] for k,v in dict.items()]
+        labels_array=np.hstack(labels_list)
+        logits_array=np.vstack(logits_list)
+        self.test_records.append((epoch, logits_array, labels_array))
+        # labels=torch.from_numpy(labels_array).to(self.device)
+        # logits=torch.from_numpy(logits_array).to(self.device)
+        #
+        # loss = self.criterion(logits, labels)
+        #
+        # # preds = logits.argmax(dim=-1).cpu().numpy()
+        # preds = np.argmax(logits_array,axis=-1)
+        # results["preds"].extend(list(preds))
+        # results["labels"].extend(list(labels_array))
+        #
+        # accuracy = compute_accuracy(
+        #     np.array(results["labels"]), np.array(results["preds"])
+        # )
+        # compute_class_accuracy(np.array(results["labels"]), np.array(results["preds"]))
+
+        # self.summary_writer.add_scalars(
+        #         "accuracy",
+        #         {"test": accuracy},
+        #         self.step
+        # )
+        # self.summary_writer.add_scalars(
+        #         "loss",
+        #         {"test": float(loss.item())},
+        #         self.step
+        # )
+        # print(f"validation loss: {average_loss:.5f}, accuracy: {accuracy * 100:2.2f}")
+
+
+def print_metrics(step, epoch, accuracy, loss):
     print(
             f"epoch: [{epoch}], "
             f"step: [{step}], "
             f"batch loss: {loss:.5f}, "
             f"batch accuracy: {accuracy * 100:2.2f}, "
-            f"data load time: "
-            f"{data_load_time:.5f}, "
-            f"step time: {step_time:.5f}"
     )
 
-def log_metrics(summary_writer, epoch, accuracy, loss, data_load_time, step_time):
+def log_metrics(summary_writer, type,epoch, accuracy, loss):
     summary_writer.add_scalar("epoch", epoch, self.step)
     summary_writer.add_scalars(
             "accuracy",
-            {"train": accuracy},
+            {type: accuracy},
             self.step
     )
     summary_writer.add_scalars(
             "loss",
-            {"train": float(loss.item())},
+            {type: float(loss.item())},
             self.step
     )
-    summary_writer.add_scalar(
-            "time/data", data_load_time, self.step
-    )
-    summary_writer.add_scalar(
-            "time/data", step_time, self.step
-    )
-
-    # def validate(self):
-    #     dict = {}
-    #     results = {"preds": [], "labels": []}
-    #     total_loss = 0
-    #     self.model.eval()
-    #
-    #     # No need to track gradients for validation, we're not optimizing.
-    #     with torch.no_grad():
-    #         for i, (batch, labels, filenames, labelnames) in enumerate(self.val_loader):
-    #             batch = batch.to(self.device)
-    #             labels = labels.to(self.device)
-    #             logits = self.model(batch)
-    #             # loss = self.criterion(logits, labels)
-    #             # total_loss += loss.item()
-    #
-    #             logits_array=logits.cpu().numpy()
-    #             labels_array=labels.cpu().numpy()
-    #             batch_size = len(filenames)
-    #             for j in range(0,batch_size):
-    #                 filename=filenames[j]
-    #                 if filename in dict:
-    #                     count = dict[filename]['count']
-    #                     dict[filename]['average']=(count*dict[filename]['average']+logits_array[j])/(count+1)
-    #                     dict[filename]['count']+=1
-    #                 else:
-    #                     dict[filename]={}
-    #                     dict[filename]['average']=logits_array[j]
-    #                     dict[filename]['label']=labels_array[j]
-    #                     dict[filename]['count']=1
-    #
-    #     labels_list=[dict[k]['label'] for k,v in dict.items()]
-    #     logits_list=[dict[k]['average'] for k,v in dict.items()]
-    #     labels_array=np.hstack(labels_list)
-    #     logits_array=np.vstack(logits_list)
-    #     labels=torch.from_numpy(labels_array).to(self.device)
-    #     logits=torch.from_numpy(logits_array).to(self.device)
-    #
-    #     loss = self.criterion(logits, labels)
-    #     total_loss += loss.item()
-    #
-    #     # preds = logits.argmax(dim=-1).cpu().numpy()
-    #     preds = np.argmax(logits_array,axis=-1)
-    #     results["preds"].extend(list(preds))
-    #     results["labels"].extend(list(labels_array))
-    #
-    #     accuracy = compute_accuracy(
-    #         np.array(results["labels"]), np.array(results["preds"])
-    #     )
-    #     average_loss = total_loss / len(labels_list)
-    #     compute_class_accuracy(np.array(results["labels"]), np.array(results["preds"]))
-    #
-    #     self.summary_writer.add_scalars(
-    #             "accuracy",
-    #             {"test": accuracy},
-    #             self.step
-    #     )
-    #     self.summary_writer.add_scalars(
-    #             "loss",
-    #             {"test": average_loss},
-    #             self.step
-    #     )
-    #     print(f"validation loss: {average_loss:.5f}, accuracy: {accuracy * 100:2.2f}")
-
 
 def compute_accuracy(labels: Union[torch.Tensor, np.ndarray], preds: Union[torch.Tensor, np.ndarray]) -> float:
     """

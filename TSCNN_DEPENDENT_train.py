@@ -239,7 +239,6 @@ class Trainer:
     def validate(self):
         dict = {}
         results = {"preds": [], "labels": []}
-        total_loss = 0
         self.model.eval()
 
         # No need to track gradients for validation, we're not optimizing.
@@ -283,7 +282,6 @@ class Trainer:
         logits=torch.from_numpy(logits_array).to(self.device)
 
         loss = self.criterion(logits, labels)
-        total_loss += loss.item()
 
         # preds = logits.argmax(dim=-1).cpu().numpy()
         preds = np.argmax(logits_array,axis=-1)
@@ -293,7 +291,6 @@ class Trainer:
         accuracy = compute_accuracy(
             np.array(results["labels"]), np.array(results["preds"])
         )
-        average_loss = total_loss / len(labels_list)
         compute_class_accuracy(np.array(results["labels"]), np.array(results["preds"]))
 
         self.summary_writer.add_scalars(
@@ -303,7 +300,7 @@ class Trainer:
         )
         self.summary_writer.add_scalars(
                 "loss",
-                {"test": average_loss},
+                {"test": float(loss.item())},
                 self.step
         )
         print(f"validation loss: {average_loss:.5f}, accuracy: {accuracy * 100:2.2f}")
