@@ -104,8 +104,8 @@ def main(args):
         pin_memory=True,
     )
 
-    MC_train_loader = torch.utils.data.DataLoader(
-        UrbanSound8KDataset('UrbanSound8K_train.pkl', "MC"),
+    MC_test_loader = torch.utils.data.DataLoader(
+        UrbanSound8KDataset('UrbanSound8K_test.pkl', "MC"),
         shuffle=True,
         batch_size=args.batch_size,
         pin_memory=True,
