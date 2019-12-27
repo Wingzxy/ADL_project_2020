@@ -177,7 +177,7 @@ def main(args):
         loss = criterion(logits,labels)
 
         if ((step + 1) % args.log_frequency) == 0:
-            log_metrics(summary_writer,"train",epoch,accuracy,loss)
+            log_metrics(summary_writer,"train",epoch,accuracy,loss,step)
         if ((step + 1) % args.print_frequency) == 0:
             print_metrics(step,epoch,accuracy,loss)
 
@@ -207,7 +207,7 @@ def main(args):
         labels=MC_labels
         compute_class_accuracy(labels,preds.numpy())
 
-        log_metrics(summary_writer,"test",epoch,accuracy,loss)
+        log_metrics(summary_writer,"test",epoch,accuracy,loss,step)
         step="VALIDATE PLACEHOLDER"
         print_metrics(step,epoch,accuracy,loss)
 
@@ -354,17 +354,17 @@ def print_metrics(step, epoch, accuracy, loss):
             f"batch accuracy: {accuracy * 100:2.2f}, "
     )
 
-def log_metrics(summary_writer, type,epoch, accuracy, loss):
-    summary_writer.add_scalar("epoch", epoch, self.step)
+def log_metrics(summary_writer, type,epoch, accuracy, loss,step):
+    summary_writer.add_scalar("epoch", epoch, step)
     summary_writer.add_scalars(
             "accuracy",
             {type: accuracy},
-            self.step
+            step
     )
     summary_writer.add_scalars(
             "loss",
             {type: float(loss.item())},
-            self.step
+            step
     )
 
 def compute_accuracy(labels: Union[torch.Tensor, np.ndarray], preds: Union[torch.Tensor, np.ndarray]) -> float:
