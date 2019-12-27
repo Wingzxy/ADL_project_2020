@@ -188,9 +188,11 @@ def main(args):
     LMC_test_records=LMC_trainer.test_records
     MC_test_records=MC_trainer.test_records
 
+    assert len(LMC_test_records)==len(MC_test_records)
+
     for i in range(0,len(LMC_test_records)):
-        LMC_epoch, LMC_logits, LMC_labels=LMC_train_records[step]
-        MC_epoch, MC_logits, MC_labels=MC_train_records[step]
+        LMC_epoch, LMC_logits, LMC_labels=LMC_train_records[i]
+        MC_epoch, MC_logits, MC_labels=MC_train_records[i]
 
         assert LMC_epoch==MC_epoch
         epoch=LMC_epoch
