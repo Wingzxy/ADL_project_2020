@@ -106,7 +106,7 @@ def main(args):
 
     MC_test_loader = torch.utils.data.DataLoader(
         UrbanSound8KDataset('UrbanSound8K_test.pkl', "MC"),
-        shuffle=True,
+        shuffle=False,
         batch_size=args.batch_size,
         pin_memory=True,
         num_workers=args.worker_count,
