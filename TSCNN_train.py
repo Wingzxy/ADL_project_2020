@@ -204,6 +204,9 @@ def main(args):
         accuracy=compute_accuracy(labels,preds)
         loss = criterion(logits,labels)
 
+        labels=MC_labels
+        class_accuracy=compute_class_accuracy(labels,preds.numpy())
+
         log_metrics(summary_writer,"test",epoch,accuracy,loss)
         step="VALIDATE PLACEHOLDER"
         print_metrics(step,epoch,accuracy,loss)
@@ -374,28 +377,28 @@ def compute_accuracy(labels: Union[torch.Tensor, np.ndarray], preds: Union[torch
     return float((labels == preds).sum()) / len(labels)
 
 
-# def compute_class_accuracy(labels: np.ndarray, preds: np.ndarray):
-#     assert len(labels) == len(preds)
-#     targets=torch.from_numpy(labels).float().to(DEVICE)
-#     predictions=torch.from_numpy(preds).float().to(DEVICE)
-#     for c in range(0,10):
-#         mask=lambda x:x==c
-#         index_of_targets_with_class_c=torch.nonzero(mask(targets))
-#         index_of_preds_with_class_c=torch.nonzero(mask(predictions))
-#         number_of_class_c_targets=len(index_of_targets_with_class_c)
-#         if number_of_class_c_targets==0:
-#             class_accuracy=0.0
-#         else:
-#             count=0
-#             for i in index_of_targets_with_class_c:
-#                 if i in index_of_preds_with_class_c:
-#                     count+=1
-#                 else:
-#                     continue
-#             class_accuracy=count/number_of_class_c_targets
-#
-#         txt = "Accuracy for class "+str(c)+") is: "+str(class_accuracy*100)
-#         print(txt)
+def compute_class_accuracy(labels: np.ndarray, preds: np.ndarray):
+    assert len(labels) == len(preds)
+    targets=torch.from_numpy(labels).float().to(DEVICE)
+    predictions=torch.from_numpy(preds).float().to(DEVICE)
+    for c in range(0,10):
+        mask=lambda x:x==c
+        index_of_targets_with_class_c=torch.nonzero(mask(targets))
+        index_of_preds_with_class_c=torch.nonzero(mask(predictions))
+        number_of_class_c_targets=len(index_of_targets_with_class_c)
+        if number_of_class_c_targets==0:
+            class_accuracy=0.0
+        else:
+            count=0
+            for i in index_of_targets_with_class_c:
+                if i in index_of_preds_with_class_c:
+                    count+=1
+                else:
+                    continue
+            class_accuracy=count/number_of_class_c_targets
+
+        txt = "Accuracy for class "+str(c)+") is: "+str(class_accuracy*100)
+        print(txt)
 
 def get_summary_writer_log_dir(args: argparse.Namespace) -> str:
     """Get a unique directory that hasn't been logged to before for use with a TB
