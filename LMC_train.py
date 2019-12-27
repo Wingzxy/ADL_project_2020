@@ -103,7 +103,7 @@ def main(args):
     criterion = nn.CrossEntropyLoss()
 
     ## TASK 11: Define the optimizer
-    optimizer = optim.SGD(model.parameters(), lr=args.learning_rate,momentum=0.9)
+    optimizer = optim.SGD(model.parameters(), lr=args.learning_rate,momentum=0.9, weight_decay=0.01)
 
     log_dir = get_summary_writer_log_dir(args)
     print(f"Writing logs to {log_dir}")
