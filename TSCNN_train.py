@@ -154,15 +154,14 @@ def main(args):
     LMC_train_records=LMC_trainer.train_records
     MC_train_records=MC_trainer.train_records
 
-    LMC_steps=LMC_trainer.step
-    MC_steps=MC_trainer.step
+    assert len(LMC_train_records)==len(MC_train_records)
 
-    assert LMC_steps==MC_steps
-    steps=LMC_steps
+    for i in range(0,len(LMC_train_records)):
+        LMC_step ,LMC_epoch, LMC_logits, LMC_labels=LMC_train_records[i]
+        MC_step, MC_epoch, MC_logits, MC_labels=MC_train_records[i]
 
-    for step in range(0,steps):
-        LMC_epoch, LMC_logits, LMC_labels=LMC_train_records[step]
-        MC_epoch, MC_logits, MC_labels=MC_train_records[step]
+        assert LMC_step==MC_step
+        step=LMC_step
 
         assert LMC_epoch==MC_epoch
         epoch=LMC_epoch
@@ -191,8 +190,11 @@ def main(args):
     assert len(LMC_test_records)==len(MC_test_records)
 
     for i in range(0,len(LMC_test_records)):
-        LMC_epoch, LMC_logits, LMC_labels=LMC_train_records[i]
-        MC_epoch, MC_logits, MC_labels=MC_train_records[i]
+        LMC_step, LMC_epoch, LMC_logits, LMC_labels=LMC_train_records[i]
+        MC_step, MC_epoch, MC_logits, MC_labels=MC_train_records[i]
+
+        assert LMC_step==MC_step
+        step=LMC_step
 
         assert LMC_epoch==MC_epoch
         epoch=LMC_epoch
@@ -212,9 +214,6 @@ def main(args):
 
         labels=MC_labels
         compute_class_accuracy(labels,preds.numpy())
-
-        iterations=int(test_dataset_length/args.batch_size) if (test_dataset_length%args.batch_size)==0 else int(test_dataset_length/args.batch_size)+1
-        step=(epoch+1)*iterations
 
         log_metrics(summary_writer,"test",epoch,accuracy,loss,step)
         print_metrics(step,epoch,accuracy,loss)
@@ -275,7 +274,7 @@ class Trainer:
                 #     preds = logits.argmax(-1)
                 #     accuracy = compute_accuracy(labels, preds)
 
-                self.train_records.append((epoch, logits_array, labels_array))
+                self.train_records.append((self.step, epoch, logits_array, labels_array))
                 # if ((self.step + 1) % log_frequency) == 0:
                 #     self.log_metrics(epoch, accuracy, loss, data_load_time, step_time)
                 # if ((self.step + 1) % print_frequency) == 0:
@@ -325,7 +324,7 @@ class Trainer:
         logits_list=[dict[k]['average'] for k,v in dict.items()]
         labels_array=np.hstack(labels_list)
         logits_array=np.vstack(logits_list)
-        self.test_records.append((epoch, logits_array, labels_array))
+        self.test_records.append((self.step, epoch, logits_array, labels_array))
         # labels=torch.from_numpy(labels_array).to(self.device)
         # logits=torch.from_numpy(logits_array).to(self.device)
         #
