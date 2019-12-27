@@ -151,41 +151,38 @@ def main(args):
         log_frequency=args.log_frequency,
     )
 
-    LMC_train_records=LMC_trainer.train_records
-    MC_train_records=MC_trainer.train_records
-
-    assert len(LMC_train_records)==len(MC_train_records)
-
-    for i in range(0,len(LMC_train_records)):
-        LMC_step ,LMC_epoch, LMC_logits, LMC_labels=LMC_train_records[i]
-        MC_step, MC_epoch, MC_logits, MC_labels=MC_train_records[i]
-
-        assert LMC_step==MC_step
-        step=LMC_step
-
-        assert LMC_epoch==MC_epoch
-        epoch=LMC_epoch
-
-        print(LMC_labels)
-        print(MC_labels)
-
-        assert np.all(LMC_labels==MC_labels)
-        labels=LMC_labels
-
-        LMC_logits=torch.from_numpy(LMC_logits)
-        MC_logits=torch.from_numpy(MC_logits)
-
-        labels=torch.from_numpy(labels)
-        logits = torch.mean(torch.stack((LMC_logits,MC_logits), dim=2),dim=2)
-        preds = logits.argmax(-1)
-
-        accuracy=compute_accuracy(labels,preds)
-        loss = criterion(logits,labels)
-
-        if ((step + 1) % args.log_frequency) == 0:
-            log_metrics(summary_writer,"train",epoch,accuracy,loss,step)
-        if ((step + 1) % args.print_frequency) == 0:
-            print_metrics(step,epoch,accuracy,loss)
+    # LMC_train_records=LMC_trainer.train_records
+    # MC_train_records=MC_trainer.train_records
+    #
+    # assert len(LMC_train_records)==len(MC_train_records)
+    #
+    # for i in range(0,len(LMC_train_records)):
+    #     LMC_step ,LMC_epoch, LMC_logits, LMC_labels=LMC_train_records[i]
+    #     MC_step, MC_epoch, MC_logits, MC_labels=MC_train_records[i]
+    #
+    #     assert LMC_step==MC_step
+    #     step=LMC_step
+    #
+    #     assert LMC_epoch==MC_epoch
+    #     epoch=LMC_epoch
+    #
+    #     assert np.all(LMC_labels==MC_labels)
+    #     labels=LMC_labels
+    #
+    #     LMC_logits=torch.from_numpy(LMC_logits)
+    #     MC_logits=torch.from_numpy(MC_logits)
+    #
+    #     labels=torch.from_numpy(labels)
+    #     logits = torch.mean(torch.stack((LMC_logits,MC_logits), dim=2),dim=2)
+    #     preds = logits.argmax(-1)
+    #
+    #     accuracy=compute_accuracy(labels,preds)
+    #     loss = criterion(logits,labels)
+    #
+    #     if ((step + 1) % args.log_frequency) == 0:
+    #         log_metrics(summary_writer,"train",epoch,accuracy,loss,step)
+    #     if ((step + 1) % args.print_frequency) == 0:
+    #         print_metrics(step,epoch,accuracy,loss)
 
     LMC_test_records=LMC_trainer.test_records
     MC_test_records=MC_trainer.test_records
@@ -201,6 +198,9 @@ def main(args):
 
         assert LMC_epoch==MC_epoch
         epoch=LMC_epoch
+
+        print(LMC_labels)
+        print(MC_labels)
 
         assert np.all(LMC_labels==MC_labels)
         labels=LMC_labels
@@ -242,7 +242,7 @@ class Trainer:
         self.criterion = criterion
         self.optimizer = optimizer
         self.step = 0
-        self.train_records= []
+        # self.train_records= []
         self.test_records=[]
 
     def train(
@@ -258,7 +258,7 @@ class Trainer:
             self.model.train()
             data_load_start_time = time.time()
             for i, (batch, labels, filenames, labelnames) in enumerate(self.train_loader):
-                labels_array=np.asarray(labels)
+                # labels_array=np.asarray(labels)
 
                 batch = batch.to(self.device)
                 labels = labels.to(self.device)
@@ -272,13 +272,14 @@ class Trainer:
                 self.optimizer.step()
                 self.optimizer.zero_grad()
 
-                logits_array=logits.detach().cpu().numpy()
+                # logits_array=logits.detach().cpu().numpy()
 
                 # with torch.no_grad():
                 #     preds = logits.argmax(-1)
                 #     accuracy = compute_accuracy(labels, preds)
 
-                self.train_records.append((self.step, epoch, logits_array, labels_array))
+                # self.train_records.append((self.step, epoch, logits_array, labels_array))
+
                 # if ((self.step + 1) % log_frequency) == 0:
                 #     self.log_metrics(epoch, accuracy, loss, data_load_time, step_time)
                 # if ((self.step + 1) % print_frequency) == 0:
