@@ -255,6 +255,8 @@ class Trainer:
             self.model.train()
             data_load_start_time = time.time()
             for i, (batch, labels, filenames, labelnames) in enumerate(self.train_loader):
+                labels_array=np.asarray(labels)
+
                 batch = batch.to(self.device)
                 labels = labels.to(self.device)
 
@@ -268,7 +270,6 @@ class Trainer:
                 self.optimizer.zero_grad()
 
                 logits_array=logits.detach().cpu().numpy()
-                labels_array=labels.detach().cpu().numpy()
 
                 # with torch.no_grad():
                 #     preds = logits.argmax(-1)
