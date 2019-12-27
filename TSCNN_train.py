@@ -112,6 +112,10 @@ def main(args):
         num_workers=args.worker_count,
     )
 
+    # The length of LMC & MC dataset are equal
+    train_dataset_length=len(LMC_train_loader.dataset)
+    test_dataset_length=len(LMC_test_loader.dataset)
+
 
     LMC_model = LMCNet(height=85, width=41, channels=1, class_count=10,dropout=args.dropout)
     MC_model = MCNet(height=85, width=41, channels=1, class_count=10,dropout=args.dropout)
@@ -160,7 +164,7 @@ def main(args):
         LMC_epoch, LMC_logits, LMC_labels=LMC_train_records[step]
         MC_epoch, MC_logits, MC_labels=MC_train_records[step]
 
-        assert np.all(LMC_epoch==MC_epoch)
+        assert LMC_epoch==MC_epoch
         epoch=LMC_epoch
 
         assert np.all(LMC_labels==MC_labels)
@@ -188,7 +192,7 @@ def main(args):
         LMC_epoch, LMC_logits, LMC_labels=LMC_train_records[step]
         MC_epoch, MC_logits, MC_labels=MC_train_records[step]
 
-        assert np.all(LMC_epoch==MC_epoch)
+        assert LMC_epoch==MC_epoch
         epoch=LMC_epoch
 
         assert np.all(LMC_labels==MC_labels)
@@ -207,8 +211,8 @@ def main(args):
         labels=MC_labels
         compute_class_accuracy(labels,preds.numpy())
 
+        step=(epoch+1)*int(test_dataset_length/args.batch_size)
         log_metrics(summary_writer,"test",epoch,accuracy,loss,step)
-        step="VALIDATE PLACEHOLDER"
         print_metrics(step,epoch,accuracy,loss)
 
     summary_writer.close()
