@@ -263,7 +263,7 @@ class Trainer:
 
         # No need to track gradients for validation, we're not optimizing.
         with torch.no_grad():
-            for i, (LMC_data, MC_data) in enumerate(self.train_loader):
+            for i, (LMC_data, MC_data) in enumerate(self.val_loader):
                 LMC_batch, LMC_labels, LMC_filenames, LMC_labelnames=LMC_data
                 MC_batch, MC_labels, MC_filenames, MC_labelnames=MC_data
 
