@@ -19,22 +19,18 @@ val_loader = torch.utils.data.DataLoader(UrbanSound8KDataset('UrbanSound8K_test.
                                          pin_memory=True)
 
 print("all finished...")
-class_set = list()
 
 
 for i, (input,target,filename,label) in enumerate(train_loader):
     # print(input)
     # target are their corresponding label
     if i == 0:
-        print(i)
         print('##################')
-        print(input.shape)
-
+        print(label)
+        print(type(label))
         print('--------------------------------------------------')
+        break
         # print(train_loader.dataset[int(i)]['classID'])
-    class_set.append(set(label))
-
-print(class_set[0])
 # print(len(class_set))
     # class_set.add(train_loader.dataset[i]['classID'])
 
