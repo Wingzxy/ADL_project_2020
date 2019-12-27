@@ -205,7 +205,7 @@ def main(args):
         loss = criterion(logits,labels)
 
         labels=MC_labels
-        class_accuracy=compute_class_accuracy(labels,preds.numpy())
+        compute_class_accuracy(labels,preds.numpy())
 
         log_metrics(summary_writer,"test",epoch,accuracy,loss)
         step="VALIDATE PLACEHOLDER"
