@@ -190,8 +190,8 @@ def main(args):
     assert len(LMC_test_records)==len(MC_test_records)
 
     for i in range(0,len(LMC_test_records)):
-        LMC_step, LMC_epoch, LMC_logits, LMC_labels=LMC_train_records[i]
-        MC_step, MC_epoch, MC_logits, MC_labels=MC_train_records[i]
+        LMC_step, LMC_epoch, LMC_logits, LMC_labels=LMC_test_records[i]
+        MC_step, MC_epoch, MC_logits, MC_labels=MC_test_records[i]
 
         assert LMC_step==MC_step
         step=LMC_step
