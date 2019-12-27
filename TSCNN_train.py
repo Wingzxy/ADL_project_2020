@@ -160,10 +160,10 @@ def main(args):
         LMC_epoch, LMC_logits, LMC_labels=LMC_train_records[step]
         MC_epoch, MC_logits, MC_labels=MC_train_records[step]
 
-        assert LMC_epoch==MC_epoch
+        assert np.all(LMC_epoch==MC_epoch)
         epoch=LMC_epoch
 
-        assert LMC_labels==MC_labels
+        assert np.all(LMC_labels==MC_labels)
         labels=LMC_labels
 
         LMC_logits=torch.from_numpy(LMC_logits)
@@ -188,10 +188,10 @@ def main(args):
         LMC_epoch, LMC_logits, LMC_labels=LMC_train_records[step]
         MC_epoch, MC_logits, MC_labels=MC_train_records[step]
 
-        assert LMC_epoch==MC_epoch
+        assert np.all(LMC_epoch==MC_epoch)
         epoch=LMC_epoch
 
-        assert LMC_labels==MC_labels
+        assert np.all(LMC_labels==MC_labels)
         labels=LMC_labels
 
         LMC_logits=torch.from_numpy(LMC_logits)
