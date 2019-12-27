@@ -211,7 +211,9 @@ def main(args):
         labels=MC_labels
         compute_class_accuracy(labels,preds.numpy())
 
-        step=(epoch+1)*int(test_dataset_length/args.batch_size)
+        iterations=int(test_dataset_length/args.batch_size) if (test_dataset_length%args.batch_size)==0 else int(test_dataset_length/args.batch_size)+1
+        step=(epoch+1)*iterations
+
         log_metrics(summary_writer,"test",epoch,accuracy,loss,step)
         print_metrics(step,epoch,accuracy,loss)
 
