@@ -194,12 +194,12 @@ class Trainer:
                 MC_loss = self.criterion(MC_logits,labels)
                 MC_loss.backward()
 
+                self.LMC_optimizer.step()
+                self.MC_optimizer.step()
+
                 loss = self.criterion(logits,labels)
 
-                self.LMC_optimizer.step()
                 self.LMC_optimizer.zero_grad()
-
-                self.MC_optimizer.step()
                 self.MC_optimizer.zero_grad()
 
                 with torch.no_grad():
