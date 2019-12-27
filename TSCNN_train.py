@@ -199,9 +199,6 @@ def main(args):
         assert LMC_epoch==MC_epoch
         epoch=LMC_epoch
 
-        print(LMC_labels)
-        print(MC_labels)
-
         assert np.all(LMC_labels==MC_labels)
         labels=LMC_labels
 
