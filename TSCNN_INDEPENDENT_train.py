@@ -326,6 +326,7 @@ class Trainer:
                 {"test": float(loss.item())},
                 self.step
         )
+        average_loss=float(loss.item())
         print(f"validation loss: {average_loss:.5f}, accuracy: {accuracy * 100:2.2f}")
 
 
