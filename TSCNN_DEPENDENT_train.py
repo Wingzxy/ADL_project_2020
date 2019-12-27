@@ -97,7 +97,7 @@ def main(args):
                  UrbanSound8KDataset('UrbanSound8K_test.pkl', "MC")
              ),
              batch_size=args.batch_size,
-             shuffle=True,
+             shuffle=False,
              num_workers=args.worker_count,
              pin_memory=True)
 
