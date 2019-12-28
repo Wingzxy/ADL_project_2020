@@ -13,6 +13,7 @@ from torch.optim.optimizer import Optimizer
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms
+from torchsummary import summary
 from model import LMCNet, MCNet, MLMCNet, TSCNN
 from dataset import UrbanSound8KDataset
 
@@ -121,6 +122,8 @@ def main(args):
         print_frequency=args.print_frequency,
         log_frequency=args.log_frequency,
     )
+
+    summary(model, input_size=(1, 145, 41))
 
     summary_writer.close()
 
