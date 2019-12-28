@@ -15,6 +15,7 @@ class FullyConvNet(nn.Module):
             out_channels=32,
             kernel_size=(3, 3),
             padding=(1, 1),
+            bias=False
         )
         self.conv1_bn = nn.BatchNorm2d(32)
 
@@ -23,6 +24,7 @@ class FullyConvNet(nn.Module):
             out_channels=32,
             kernel_size=(3, 3),
             padding=(1, 1),
+            bias=False
         )
         self.conv2_bn = nn.BatchNorm2d(32)
 
@@ -37,6 +39,7 @@ class FullyConvNet(nn.Module):
             out_channels=64,
             kernel_size=(3, 3),
             padding=(1, 1),
+            bias=False
         )
         self.conv3_bn =nn.BatchNorm2d(64)
 
@@ -46,6 +49,7 @@ class FullyConvNet(nn.Module):
             kernel_size=(3, 3),
             padding=(1, 1),
             stride=(2, 2),
+            bias=False
         )
         self.conv4_bn =nn.BatchNorm2d(64)
 
@@ -66,7 +70,5 @@ class FullyConvNet(nn.Module):
 
     @staticmethod
     def initialise_layer(layer):
-        if hasattr(layer, "bias"):
-            nn.init.zeros_(layer.bias)
         if hasattr(layer, "weight"):
             nn.init.kaiming_normal_(layer.weight)
