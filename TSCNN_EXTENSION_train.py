@@ -23,10 +23,10 @@ from pathlib import Path
 torch.backends.cudnn.benchmark = True
 
 parser = argparse.ArgumentParser(
-    description="Train a TSCNN INDEPENDENT on UrbanSound8KDataset",
+    description="Train a TSCNN-E on UrbanSound8KDataset",
     formatter_class=argparse.ArgumentDefaultsHelpFormatter,
 )
-parser.add_argument("--log-dir", default=Path("TSCNN_INDEPENDENT_logs"), type=Path)
+parser.add_argument("--log-dir", default=Path("TSCNN_E_logs"), type=Path)
 parser.add_argument("--learning-rate", default=1e-3, type=float, help="Learning rate")
 parser.add_argument(
     "--batch-size",
