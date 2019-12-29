@@ -14,7 +14,7 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms
 from torchsummary import summary
-from model import LMCNet, MCNet, MLMCNet, TSCNN
+from model import LMCNet_E, MCNet_E
 from dataset import UrbanSound8KDataset, ConcatDataset
 
 import argparse
@@ -103,8 +103,8 @@ def main(args):
              pin_memory=True)
 
 
-    LMC_model = LMCNet(height=85, width=41, channels=1, class_count=10,dropout=args.dropout)
-    MC_model = MCNet(height=85, width=41, channels=1, class_count=10,dropout=args.dropout)
+    LMC_model = LMCNet_E(height=85, width=41, channels=1, class_count=10,dropout=args.dropout)
+    MC_model = MCNet_E(height=85, width=41, channels=1, class_count=10,dropout=args.dropout)
 
     ## TASK 8: Redefine the criterion to be softmax cross entropy
     criterion = nn.CrossEntropyLoss()

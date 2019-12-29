@@ -14,7 +14,7 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms
 from torchsummary import summary
-from model import LMCNet, MCNet, MLMCNet, TSCNN
+from model import MLMCNet
 from dataset import UrbanSound8KDataset
 
 import argparse
