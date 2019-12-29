@@ -90,7 +90,7 @@ class MLMCNet(nn.Module):
 
 class LMCNet_E(nn.Module):
     def __init__(self, height: int, width: int, channels: int, class_count: int, dropout: float):
-        super(LMCNet, self).__init__()
+        super(LMCNet_E, self).__init__()
 
         self.dropout=nn.Dropout(p=dropout)
 
@@ -118,7 +118,7 @@ class LMCNet_E(nn.Module):
 
 class MCNet_E(nn.Module):
     def __init__(self, height: int, width: int, channels: int, class_count: int, dropout: float):
-        super(MCNet, self).__init__()
+        super(MCNet_E, self).__init__()
 
         self.dropout=nn.Dropout(p=dropout)
 
