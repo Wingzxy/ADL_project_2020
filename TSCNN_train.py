@@ -15,7 +15,7 @@ from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms
 from torchsummary import summary
 from model import LMCNet, MCNet, MLMCNet, TSCNN
-from dataset import UrbanSound8KDataset
+from dataset import UrbanSound8KDataset, ConcatDataset
 
 import argparse
 from pathlib import Path
@@ -23,10 +23,10 @@ from pathlib import Path
 torch.backends.cudnn.benchmark = True
 
 parser = argparse.ArgumentParser(
-    description="Train a TSCNN on UrbanSound8KDataset",
+    description="Train a TSCNN INDEPENDENT on UrbanSound8KDataset",
     formatter_class=argparse.ArgumentDefaultsHelpFormatter,
 )
-parser.add_argument("--log-dir", default=Path("TSCNN_logs"), type=Path)
+parser.add_argument("--log-dir", default=Path("TSCNN_INDEPENDENT_logs"), type=Path)
 parser.add_argument("--learning-rate", default=1e-3, type=float, help="Learning rate")
 parser.add_argument(
     "--batch-size",
@@ -80,42 +80,27 @@ else:
 
 
 def main(args):
-    LMC_train_loader = torch.utils.data.DataLoader(
-        UrbanSound8KDataset('UrbanSound8K_train.pkl', "LMC"),
-        shuffle=True,
-        batch_size=args.batch_size,
-        pin_memory=True,
-        num_workers=args.worker_count,
-    )
 
-    MC_train_loader = torch.utils.data.DataLoader(
-        UrbanSound8KDataset('UrbanSound8K_train.pkl', "MC"),
-        shuffle=True,
-        batch_size=args.batch_size,
-        pin_memory=True,
-        num_workers=args.worker_count,
-    )
+    train_loader = torch.utils.data.DataLoader(
+             ConcatDataset(
+                 UrbanSound8KDataset('UrbanSound8K_train.pkl', "LMC"),
+                 UrbanSound8KDataset('UrbanSound8K_train.pkl', "MC")
+             ),
+             batch_size=args.batch_size,
+             shuffle=True,
+             num_workers=args.worker_count,
+             pin_memory=True)
 
 
-    LMC_test_loader = torch.utils.data.DataLoader(
-        UrbanSound8KDataset('UrbanSound8K_test.pkl', "LMC"),
-        shuffle=False,
-        batch_size=args.batch_size,
-        num_workers=args.worker_count,
-        pin_memory=True,
-    )
-
-    MC_test_loader = torch.utils.data.DataLoader(
-        UrbanSound8KDataset('UrbanSound8K_test.pkl', "MC"),
-        shuffle=False,
-        batch_size=args.batch_size,
-        pin_memory=True,
-        num_workers=args.worker_count,
-    )
-
-    # The length of LMC & MC dataset are equal
-    train_dataset_length=len(LMC_train_loader.dataset)
-    test_dataset_length=len(LMC_test_loader.dataset)
+    test_loader = torch.utils.data.DataLoader(
+             ConcatDataset(
+                 UrbanSound8KDataset('UrbanSound8K_test.pkl', "LMC"),
+                 UrbanSound8KDataset('UrbanSound8K_test.pkl', "MC")
+             ),
+             batch_size=args.batch_size,
+             shuffle=False,
+             num_workers=args.worker_count,
+             pin_memory=True)
 
 
     LMC_model = LMCNet(height=85, width=41, channels=1, class_count=10,dropout=args.dropout)
@@ -125,8 +110,8 @@ def main(args):
     criterion = nn.CrossEntropyLoss()
 
     ## TASK 11: Define the optimizer
-    LMC_optimizer = optim.SGD(LMC_model.parameters(), lr=args.learning_rate,momentum=0.9, weight_decay=0.01)
-    MC_optimizer = optim.SGD(MC_model.parameters(), lr=args.learning_rate,momentum=0.9, weight_decay=0.01)
+    LMC_optimizer = optimizer = optim.Adam(LMC_model.parameters(), lr=args.learning_rate, betas=(0.9, 0.999), weight_decay=0.004)
+    MC_optimizer = optimizer = optim.Adam(MC_model.parameters(), lr=args.learning_rate, betas=(0.9, 0.999), weight_decay=0.004)
 
     log_dir = get_summary_writer_log_dir(args)
     print(f"Writing logs to {log_dir}")
@@ -134,90 +119,18 @@ def main(args):
             str(log_dir),
             flush_secs=5
     )
+    trainer = Trainer(
+        LMC_model, MC_model, train_loader, test_loader, criterion, LMC_optimizer, MC_optimizer, summary_writer, DEVICE
+    )
 
-    LMC_trainer = Trainer(LMC_model, LMC_train_loader, LMC_test_loader, criterion, LMC_optimizer, DEVICE)
-    MC_trainer = Trainer(MC_model, MC_train_loader, MC_test_loader, criterion, MC_optimizer, DEVICE)
-
-    LMC_trainer.train(
+    trainer.train(
         args.epochs,
         args.val_frequency,
         print_frequency=args.print_frequency,
         log_frequency=args.log_frequency,
     )
 
-    MC_trainer.train(
-        args.epochs,
-        args.val_frequency,
-        print_frequency=args.print_frequency,
-        log_frequency=args.log_frequency,
-    )
-
-    # LMC_train_records=LMC_trainer.train_records
-    # MC_train_records=MC_trainer.train_records
-    #
-    # assert len(LMC_train_records)==len(MC_train_records)
-    #
-    # for i in range(0,len(LMC_train_records)):
-    #     LMC_step ,LMC_epoch, LMC_logits, LMC_labels=LMC_train_records[i]
-    #     MC_step, MC_epoch, MC_logits, MC_labels=MC_train_records[i]
-    #
-    #     assert LMC_step==MC_step
-    #     step=LMC_step
-    #
-    #     assert LMC_epoch==MC_epoch
-    #     epoch=LMC_epoch
-    #
-    #     assert np.all(LMC_labels==MC_labels)
-    #     labels=LMC_labels
-    #
-    #     LMC_logits=torch.from_numpy(LMC_logits)
-    #     MC_logits=torch.from_numpy(MC_logits)
-    #
-    #     labels=torch.from_numpy(labels)
-    #     logits = torch.mean(torch.stack((LMC_logits,MC_logits), dim=2),dim=2)
-    #     preds = logits.argmax(-1)
-    #
-    #     accuracy=compute_accuracy(labels,preds)
-    #     loss = criterion(logits,labels)
-    #
-    #     if ((step + 1) % args.log_frequency) == 0:
-    #         log_metrics(summary_writer,"train",epoch,accuracy,loss,step)
-    #     if ((step + 1) % args.print_frequency) == 0:
-    #         print_metrics(step,epoch,accuracy,loss)
-
-    LMC_test_records=LMC_trainer.test_records
-    MC_test_records=MC_trainer.test_records
-
-    assert len(LMC_test_records)==len(MC_test_records)
-
-    for i in range(0,len(LMC_test_records)):
-        LMC_step, LMC_epoch, LMC_logits, LMC_labels=LMC_test_records[i]
-        MC_step, MC_epoch, MC_logits, MC_labels=MC_test_records[i]
-
-        assert LMC_step==MC_step
-        step=LMC_step
-
-        assert LMC_epoch==MC_epoch
-        epoch=LMC_epoch
-
-        assert np.all(LMC_labels==MC_labels)
-        labels=LMC_labels
-
-        LMC_logits=torch.from_numpy(LMC_logits)
-        MC_logits=torch.from_numpy(MC_logits)
-
-        labels=torch.from_numpy(labels)
-        logits = torch.mean(torch.stack((LMC_logits,MC_logits), dim=2),dim=2)
-        preds = logits.argmax(-1)
-
-        accuracy=compute_accuracy(labels,preds)
-        loss = criterion(logits,labels)
-
-        labels=MC_labels
-        compute_class_accuracy(labels,preds.numpy())
-
-        log_metrics(summary_writer,"test",epoch,accuracy,loss,step)
-        print_metrics(step,epoch,accuracy,loss)
+    summary(model, [(1, 85, 41), (1, 85, 41)])
 
     summary_writer.close()
 
@@ -226,22 +139,26 @@ def main(args):
 class Trainer:
     def __init__(
         self,
-        model: nn.Module,
+        LMC_model: nn.Module,
+        MC_model: nn.Module,
         train_loader: DataLoader,
         val_loader: DataLoader,
         criterion: nn.Module,
-        optimizer: Optimizer,
+        LMC_optimizer: Optimizer,
+        MC_optimizer: Optimizer,
+        summary_writer: SummaryWriter,
         device: torch.device,
     ):
-        self.model = model.to(device)
+        self.LMC_model = LMC_model.to(device)
+        self.MC_model=MC_model.to(device)
         self.device = device
         self.train_loader = train_loader
         self.val_loader = val_loader
         self.criterion = criterion
-        self.optimizer = optimizer
+        self.LMC_optimizer = LMC_optimizer
+        self.MC_optimizer = MC_optimizer
+        self.summary_writer = summary_writer
         self.step = 0
-        # self.train_records= []
-        self.test_records=[]
 
     def train(
         self,
@@ -251,60 +168,120 @@ class Trainer:
         log_frequency: int = 5,
         start_epoch: int = 0
     ):
-        self.model.train()
+        self.LMC_model.train()
+        self.MC_model.train()
         for epoch in range(start_epoch, epochs):
-            self.model.train()
+            self.LMC_model.train()
+            self.MC_model.train()
             data_load_start_time = time.time()
-            for i, (batch, labels, filenames, labelnames) in enumerate(self.train_loader):
-                # labels_array=np.asarray(labels)
+            for i, (LMC_data, MC_data) in enumerate(self.train_loader):
+                LMC_batch, LMC_labels, LMC_filenames, LMC_labelnames=LMC_data
+                MC_batch, MC_labels, MC_filenames, MC_labelnames=MC_data
 
-                batch = batch.to(self.device)
+                LMC_batch = LMC_batch.to(self.device)
+                MC_batch = MC_batch.to(self.device)
+                data_load_end_time = time.time()
+                labels=LMC_labels
+                filenames=LMC_filenames
+                labelnames=LMC_labelnames
+
                 labels = labels.to(self.device)
 
-                logits = self.model.forward(batch)
+                LMC_logits = self.LMC_model.forward(LMC_batch)
+                MC_logits = self.MC_model.forward(MC_batch)
+                logits = torch.mean(torch.stack((LMC_logits,MC_logits), dim=2),dim=2)
+
+                LMC_loss = self.criterion(LMC_logits,labels)
+                LMC_loss.backward()
+
+                MC_loss = self.criterion(MC_logits,labels)
+                MC_loss.backward()
+
+                self.LMC_optimizer.step()
+                self.MC_optimizer.step()
 
                 loss = self.criterion(logits,labels)
 
-                loss.backward()
+                self.LMC_optimizer.zero_grad()
+                self.MC_optimizer.zero_grad()
 
-                self.optimizer.step()
-                self.optimizer.zero_grad()
+                with torch.no_grad():
+                    preds = logits.argmax(-1)
+                    accuracy = compute_accuracy(labels, preds)
 
-                # logits_array=logits.detach().cpu().numpy()
-
-                # with torch.no_grad():
-                #     preds = logits.argmax(-1)
-                #     accuracy = compute_accuracy(labels, preds)
-
-                # self.train_records.append((self.step, epoch, logits_array, labels_array))
-
-                # if ((self.step + 1) % log_frequency) == 0:
-                #     self.log_metrics(epoch, accuracy, loss, data_load_time, step_time)
-                # if ((self.step + 1) % print_frequency) == 0:
-                #     self.print_metrics(epoch, accuracy, loss, data_load_time, step_time)
+                data_load_time = data_load_end_time - data_load_start_time
+                step_time = time.time() - data_load_end_time
+                if ((self.step + 1) % log_frequency) == 0:
+                    self.log_metrics(epoch, accuracy, loss, data_load_time, step_time)
+                if ((self.step + 1) % print_frequency) == 0:
+                    self.print_metrics(epoch, accuracy, loss, data_load_time, step_time)
 
                 self.step += 1
                 data_load_start_time = time.time()
 
-            # self.summary_writer.add_scalar("epoch", epoch, self.step)
+            self.summary_writer.add_scalar("epoch", epoch, self.step)
             if ((epoch + 1) % val_frequency) == 0:
-                self.validate(epoch)
+                self.validate()
                 # self.validate() will put the model in validation mode,
                 # so we have to switch back to train mode afterwards
-                self.model.train()
+                self.LMC_model.train()
+                self.MC_model.train()
 
-    def validate(self,epoch):
+    def print_metrics(self, epoch, accuracy, loss, data_load_time, step_time):
+        epoch_step = self.step % len(self.train_loader)
+        print(
+                f"epoch: [{epoch}], "
+                f"step: [{epoch_step}/{len(self.train_loader)}], "
+                f"batch loss: {loss:.5f}, "
+                f"batch accuracy: {accuracy * 100:2.2f}, "
+                f"data load time: "
+                f"{data_load_time:.5f}, "
+                f"step time: {step_time:.5f}"
+        )
+
+    def log_metrics(self, epoch, accuracy, loss, data_load_time, step_time):
+        self.summary_writer.add_scalar("epoch", epoch, self.step)
+        self.summary_writer.add_scalars(
+                "accuracy",
+                {"train": accuracy},
+                self.step
+        )
+        self.summary_writer.add_scalars(
+                "loss",
+                {"train": float(loss.item())},
+                self.step
+        )
+        self.summary_writer.add_scalar(
+                "time/data", data_load_time, self.step
+        )
+        self.summary_writer.add_scalar(
+                "time/data", step_time, self.step
+        )
+
+    def validate(self):
         dict = {}
-        # results = {"preds": [], "labels": []}
-        self.model.eval()
+        results = {"preds": [], "labels": []}
+        self.LMC_model.eval()
+        self.MC_model.eval()
 
         # No need to track gradients for validation, we're not optimizing.
         with torch.no_grad():
-            for i, (batch, labels, filenames, labelnames) in enumerate(self.val_loader):
-                batch = batch.to(self.device)
-                labels = labels.to(self.device)
-                logits = self.model(batch)
+            for i, (LMC_data, MC_data) in enumerate(self.val_loader):
+                LMC_batch, LMC_labels, LMC_filenames, LMC_labelnames=LMC_data
+                MC_batch, MC_labels, MC_filenames, MC_labelnames=MC_data
 
+                LMC_batch = LMC_batch.to(self.device)
+                MC_batch = MC_batch.to(self.device)
+                data_load_end_time = time.time()
+                labels=LMC_labels
+                filenames=LMC_filenames
+                labelnames=LMC_labelnames
+
+                labels = labels.to(self.device)
+
+                LMC_logits = self.LMC_model.forward(LMC_batch)
+                MC_logits = self.MC_model.forward(MC_batch)
+                logits = torch.mean(torch.stack((LMC_logits,MC_logits), dim=2),dim=2)
                 # loss = self.criterion(logits, labels)
                 # total_loss += loss.item()
 
@@ -327,55 +304,34 @@ class Trainer:
         logits_list=[dict[k]['average'] for k,v in dict.items()]
         labels_array=np.hstack(labels_list)
         logits_array=np.vstack(logits_list)
-        self.test_records.append((self.step, epoch, logits_array, labels_array))
-        # labels=torch.from_numpy(labels_array).to(self.device)
-        # logits=torch.from_numpy(logits_array).to(self.device)
-        #
-        # loss = self.criterion(logits, labels)
-        #
-        # # preds = logits.argmax(dim=-1).cpu().numpy()
-        # preds = np.argmax(logits_array,axis=-1)
-        # results["preds"].extend(list(preds))
-        # results["labels"].extend(list(labels_array))
-        #
-        # accuracy = compute_accuracy(
-        #     np.array(results["labels"]), np.array(results["preds"])
-        # )
-        # compute_class_accuracy(np.array(results["labels"]), np.array(results["preds"]))
+        labels=torch.from_numpy(labels_array).to(self.device)
+        logits=torch.from_numpy(logits_array).to(self.device)
 
-        # self.summary_writer.add_scalars(
-        #         "accuracy",
-        #         {"test": accuracy},
-        #         self.step
-        # )
-        # self.summary_writer.add_scalars(
-        #         "loss",
-        #         {"test": float(loss.item())},
-        #         self.step
-        # )
-        # print(f"validation loss: {average_loss:.5f}, accuracy: {accuracy * 100:2.2f}")
+        loss = self.criterion(logits, labels)
 
+        # preds = logits.argmax(dim=-1).cpu().numpy()
+        preds = np.argmax(logits_array,axis=-1)
+        results["preds"].extend(list(preds))
+        results["labels"].extend(list(labels_array))
 
-def print_metrics(step, epoch, accuracy, loss):
-    print(
-            f"epoch: [{epoch}], "
-            f"step: [{step}], "
-            f"batch loss: {loss:.5f}, "
-            f"batch accuracy: {accuracy * 100:2.2f}, "
-    )
+        accuracy = compute_accuracy(
+            np.array(results["labels"]), np.array(results["preds"])
+        )
+        compute_class_accuracy(np.array(results["labels"]), np.array(results["preds"]))
 
-def log_metrics(summary_writer, type,epoch, accuracy, loss,step):
-    summary_writer.add_scalar("epoch", epoch, step)
-    summary_writer.add_scalars(
-            "accuracy",
-            {type: accuracy},
-            step
-    )
-    summary_writer.add_scalars(
-            "loss",
-            {type: float(loss.item())},
-            step
-    )
+        self.summary_writer.add_scalars(
+                "accuracy",
+                {"test": accuracy},
+                self.step
+        )
+        self.summary_writer.add_scalars(
+                "loss",
+                {"test": float(loss.item())},
+                self.step
+        )
+        average_loss=float(loss.item())
+        print(f"validation loss: {average_loss:.5f}, accuracy: {accuracy * 100:2.2f}")
+
 
 def compute_accuracy(labels: Union[torch.Tensor, np.ndarray], preds: Union[torch.Tensor, np.ndarray]) -> float:
     """
@@ -387,6 +343,7 @@ def compute_accuracy(labels: Union[torch.Tensor, np.ndarray], preds: Union[torch
     return float((labels == preds).sum()) / len(labels)
 
 
+# CLASS 1 AND CLASS 6 HAD ACCURACIES OF 0. THIS IS NOT NORMAL. LOOK AT THIS FUNCTION
 def compute_class_accuracy(labels: np.ndarray, preds: np.ndarray):
     assert len(labels) == len(preds)
     targets=torch.from_numpy(labels).float().to(DEVICE)
@@ -407,7 +364,7 @@ def compute_class_accuracy(labels: np.ndarray, preds: np.ndarray):
                     continue
             class_accuracy=count/number_of_class_c_targets
 
-        txt = "Accuracy for class "+str(c)+") is: "+str(class_accuracy*100)
+        txt = "Accuracy for class "+str(c)+" is: "+str(class_accuracy*100)
         print(txt)
 
 def get_summary_writer_log_dir(args: argparse.Namespace) -> str:
@@ -437,7 +394,6 @@ def get_summary_writer_log_dir(args: argparse.Namespace) -> str:
             return str(tb_log_dir)
         i += 1
     return str(tb_log_dir)
-
 
 
 if __name__ == "__main__":
