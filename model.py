@@ -143,3 +143,27 @@ class MCNet_E(nn.Module):
     def initialise_layer(layer):
         if hasattr(layer, "weight"):
             nn.init.kaiming_normal_(layer.weight)
+
+class TSCNN(nn.Module):
+    def __init__(self, height: int, width: int, channels: int, class_count: int, dropout: float):
+        super(TSCNN, self).__init__()
+
+        self.dropout=nn.Dropout(p=dropout)
+
+        self.branch_1 = LMCNet(height, width, channels, class_count, dropout=dropout)
+        self.branch_2 = MCNet(height, width, channels, class_count, dropout=dropout)
+
+        self.initialise_layer(self.branch_1)
+        self.initialise_layer(self.branch_2)
+
+    def forward(self, lmc: torch.Tensor, mc: torch.Tensor) -> torch.Tensor:
+        x1=self.branch_1(lmc)
+        x2=self.branch_2(mc)
+        result = torch.mean(torch.stack((x1,x2), dim=2),dim=2)
+
+        return result
+
+    @staticmethod
+    def initialise_layer(layer):
+        if hasattr(layer, "weight"):
+            nn.init.kaiming_normal_(layer.weight)
