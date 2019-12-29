@@ -110,8 +110,8 @@ def main(args):
     criterion = nn.CrossEntropyLoss()
 
     ## TASK 11: Define the optimizer
-    LMC_optimizer = optim.SGD(LMC_model.parameters(), lr=args.learning_rate,momentum=0.9, weight_decay=0.01)
-    MC_optimizer = optim.SGD(MC_model.parameters(), lr=args.learning_rate,momentum=0.9, weight_decay=0.01)
+    LMC_optimizer = optimizer = optim.Adam(LMC_model.parameters(), lr=args.learning_rate, betas=(0.9, 0.999), weight_decay=0.004)
+    MC_optimizer = optimizer = optim.Adam(MC_model.parameters(), lr=args.learning_rate, betas=(0.9, 0.999), weight_decay=0.004)
 
     log_dir = get_summary_writer_log_dir(args)
     print(f"Writing logs to {log_dir}")
