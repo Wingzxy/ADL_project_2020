@@ -130,7 +130,8 @@ def main(args):
         log_frequency=args.log_frequency,
     )
 
-    summary(model, [(1, 85, 41), (1, 85, 41)])
+    summary(LMC_model, input_size=(1, 85, 41))
+    summary(MC_model, input_size=(1, 85, 41))
 
     summary_writer.close()
 
