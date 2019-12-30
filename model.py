@@ -1,7 +1,7 @@
 import torch
 from torch import nn, optim
 from torch.nn import functional as F
-from FCN import FullyConvNet, DilatedFullyConvNet
+from FCN import FullyConvNet
 
 class LMCNet(nn.Module):
     def __init__(self, height: int, width: int, channels: int, class_count: int, dropout: float):
