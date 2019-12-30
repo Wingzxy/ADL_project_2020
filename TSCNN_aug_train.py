@@ -83,8 +83,8 @@ else:
 def main(args):
 
     train_dataset=ConcatDataset(
-        UrbanSound8KDataset('UrbanSound8K_train.pkl', "LMC", transform=transform = lambda x :spec_augment_pytorch.spec_augment(x,frequency_masking_para=85,time_masking_para=41)),
-        UrbanSound8KDataset('UrbanSound8K_train.pkl', "MC", transform=transform = lambda x :spec_augment_pytorch.spec_augment(x,frequency_masking_para=85,time_masking_para=41))
+        UrbanSound8KDataset('UrbanSound8K_train.pkl', "LMC", transform = lambda x :spec_augment_pytorch.spec_augment(x,frequency_masking_para=85,time_masking_para=41)),
+        UrbanSound8KDataset('UrbanSound8K_train.pkl', "MC", transform = lambda x :spec_augment_pytorch.spec_augment(x,frequency_masking_para=85,time_masking_para=41))
     )
 
     training_class_counts=np.array([6295, 1825, 6248, 5121, 5682, 6282, 1112, 5886, 5819, 6299])
