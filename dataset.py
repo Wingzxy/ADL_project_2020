@@ -6,10 +6,11 @@ import pickle
 
 class UrbanSound8KDataset(data.Dataset):
     # s = set()
-    def __init__(self, dataset_path, mode):
+    def __init__(self, dataset_path, mode, transform=lambda x:x):
         self.dataset = pickle.load(open(dataset_path, 'rb'))
         # print(self.dataset)
         self.mode = mode
+        self.transform=transform
 
     def __getitem__(self, index):
 
@@ -55,7 +56,7 @@ class UrbanSound8KDataset(data.Dataset):
         label = self.dataset[index]['classID']
         classname = self.dataset[index]['class']
         fname = self.dataset[index]['filename']
-        return feature, label, fname, classname
+        return self.transform(feature), label, fname, classname
 
     def __len__(self):
         return len(self.dataset)

@@ -1,10 +1,14 @@
 import torch
 from torch.utils import data
 from dataset import UrbanSound8KDataset
+from SpecAugment import spec_augment_pytorch
+import matplotlib.pyplot as plt
+
 
 print("start...")
 
-train_loader = torch.utils.data.DataLoader(UrbanSound8KDataset('UrbanSound8K_train.pkl', "LMC"),
+train_loader = torch.utils.data.DataLoader(UrbanSound8KDataset('UrbanSound8K_train.pkl', "LMC", transform = lambda x :spec_augment_pytorch.spec_augment(x,frequency_masking_para=85,
+                 time_masking_para=41,)),
                                           batch_size=32,
                                           shuffle=True,
                                           num_workers=8,
@@ -25,17 +29,16 @@ val_class_counts=[0,0,0,0,0,0,0,0,0,0]
 
 
 for i, (input,target,filename,label) in enumerate(train_loader):
+    if i==0:
+        print(input.size())
+        spec_augment_pytorch.visualization_spectrogram(mel_spectrogram=input[0],
+                                                      title="pytorch Warped & Masked Mel Spectrogram")
 
-    # target are their corresponding label
     for c in range(0,10):
         train_class_counts[c]+=target.tolist().count(c)
-        # print(train_loader.dataset[int(i)]['classID'])
-# print(len(class_set))
-    # class_set.add(train_loader.dataset[i]['classID'])
 
-# x = torch.randn(2,3,4,5)
-# print(x)
 for i, (input,target,filename,label) in enumerate(val_loader):
+
     for c in range(0,10):
         val_class_counts[c]+=target.tolist().count(c)
 
