@@ -20,21 +20,26 @@ val_loader = torch.utils.data.DataLoader(UrbanSound8KDataset('UrbanSound8K_test.
 
 print("all finished...")
 
+train_class_counts=[0,0,0,0,0,0,0,0,0,0]
+val_class_counts=[0,0,0,0,0,0,0,0,0,0]
+
 
 for i, (input,target,filename,label) in enumerate(train_loader):
-    # print(input)
+
     # target are their corresponding label
-    if i == 0:
-        print('##################')
-        print(label)
-        print(type(label))
-        print('--------------------------------------------------')
-        break
+    for c in range(0,10):
+        train_class_counts[c]+=target.tolist().count(c)
         # print(train_loader.dataset[int(i)]['classID'])
 # print(len(class_set))
     # class_set.add(train_loader.dataset[i]['classID'])
 
 # x = torch.randn(2,3,4,5)
 # print(x)
-# for i, (input,target,filename) in enumerate(val_loader):
-    # validation code
+for i, (input,target,filename,label) in enumerate(val_loader):
+    for c in range(0,10):
+        val_class_counts[c]+=target.tolist().count(c)
+
+print("Train dataset class counts")
+print(train_class_counts)
+print("Test dataset class counts")
+print(val_class_counts)

@@ -81,16 +81,34 @@ else:
 
 def main(args):
 
-    train_loader = torch.utils.data.DataLoader(
-             ConcatDataset(
-                 UrbanSound8KDataset('UrbanSound8K_train.pkl', "LMC"),
-                 UrbanSound8KDataset('UrbanSound8K_train.pkl', "MC")
-             ),
-             batch_size=args.batch_size,
-             shuffle=True,
-             num_workers=args.worker_count,
-             pin_memory=True)
+    train_dataset=ConcatDataset(
+        UrbanSound8KDataset('UrbanSound8K_train.pkl', "LMC"),
+        UrbanSound8KDataset('UrbanSound8K_train.pkl', "MC")
+    )
 
+    training_class_counts=np.array([6295, 1825, 6248, 5121, 5682, 6282, 1112, 5886, 5819, 6299])
+    class_weights=1/training_class_counts
+    data_weights=[]
+
+    for i in range(0,len(train_dataset)):
+        LMC_data, MC_data=train_dataset.__getitem__(i)
+
+        assert LMC_data[1]==MC_data[1]
+        label=LMC_data[1]
+
+        data_weight=class_weights[label]
+        data_weights.append(data_weight)
+
+    sampler = torch.utils.data.sampler.WeightedRandomSampler(torch.tensor(data_weights), len(train_dataset))
+
+
+    train_loader = torch.utils.data.DataLoader(
+             train_dataset,
+             batch_size=args.batch_size,
+             shuffle=False,
+             num_workers=args.worker_count,
+             pin_memory=True,
+             sampler=sampler)
 
     test_loader = torch.utils.data.DataLoader(
              ConcatDataset(

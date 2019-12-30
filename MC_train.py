@@ -80,14 +80,27 @@ else:
 
 
 def main(args):
+    train_dataset=UrbanSound8KDataset('UrbanSound8K_train.pkl', "MC")
+
+    training_class_counts=np.array([6295, 1825, 6248, 5121, 5682, 6282, 1112, 5886, 5819, 6299])
+    class_weights=1/training_class_counts
+    data_weights=[]
+
+    for i in range(0,len(train_dataset)):
+        features, label, filename, labelname=train_dataset.__getitem__(i)
+        data_weight=class_weights[label]
+        data_weights.append(data_weight)
+
+    sampler = torch.utils.data.sampler.WeightedRandomSampler(torch.tensor(data_weights), len(train_dataset))
+
     train_loader = torch.utils.data.DataLoader(
-        UrbanSound8KDataset('UrbanSound8K_train.pkl', "MC"),
-        shuffle=True,
+        train_dataset,
+        shuffle=False,
         batch_size=args.batch_size,
         pin_memory=True,
         num_workers=args.worker_count,
+        sampler=sampler,
     )
-
 
     test_loader = torch.utils.data.DataLoader(
         UrbanSound8KDataset('UrbanSound8K_test.pkl', "MC"),
