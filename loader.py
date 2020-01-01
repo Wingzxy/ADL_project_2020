@@ -32,7 +32,7 @@ for i, (input,target,filename,label) in enumerate(train_loader):
     if i==0:
         print(input.size())
         plt.figure(figsize=(10, 4))
-        librosa.display.specshow(input[0][0,:,:].numpy())
+        librosa.display.specshow(input[0][0,:,:].numpy(), x_axis='time')
         plt.title("LMC Input")
         plt.tight_layout()
         plt.show()
@@ -51,4 +51,3 @@ for i, (input,target,filename,label) in enumerate(train_loader):
 #print(train_class_counts)
 #print("Test dataset class counts")
 #print(val_class_counts)
-
