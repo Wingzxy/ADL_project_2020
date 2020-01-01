@@ -32,7 +32,7 @@ for i, (input,target,filename,label) in enumerate(train_loader):
     if i==0:
         print(input.size())
         plt.figure(figsize=(10, 4))
-        librosa.display.specshow(input[0][0,:,:])
+        librosa.display.specshow(input[0][0,:,:].numpy())
         plt.title("LMC Input")
         plt.tight_layout()
         plt.show()
