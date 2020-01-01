@@ -36,6 +36,7 @@ for i, (input,target,filename,label) in enumerate(train_loader):
         plt.title("LMC Input")
         plt.tight_layout()
         plt.show()
+        plt.savefig('LMC_Input.png')
         break
 
 #    for c in range(0,10):
