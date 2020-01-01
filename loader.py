@@ -35,8 +35,8 @@ for i, (input,target,filename,label) in enumerate(train_loader):
         librosa.display.specshow(input[0][0,:,:].numpy(), x_axis='time')
         plt.title("LMC Input")
         plt.tight_layout()
-        plt.show()
         plt.savefig('LMC_Input.png')
+        plt.show()
         break
 
 #    for c in range(0,10):
