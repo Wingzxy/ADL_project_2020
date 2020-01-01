@@ -3,6 +3,7 @@ from torch.utils import data
 from dataset import UrbanSound8KDataset
 from SpecAugment import spec_augment_pytorch
 import matplotlib.pyplot as plt
+import librosa
 
 
 print("start...")
@@ -23,15 +24,18 @@ print("first finished...")
 
 print("all finished...")
 
-train_class_counts=[0,0,0,0,0,0,0,0,0,0]
-val_class_counts=[0,0,0,0,0,0,0,0,0,0]
+#train_class_counts=[0,0,0,0,0,0,0,0,0,0]
+#val_class_counts=[0,0,0,0,0,0,0,0,0,0]
 
 
 for i, (input,target,filename,label) in enumerate(train_loader):
     if i==0:
         print(input.size())
-        spec_augment_pytorch.visualization_spectrogram(mel_spectrogram=input[0],
-                                                      title="Mel Spectrogram")
+        plt.figure(figsize=(10, 4))
+        librosa.display.specshow(input[0][0,:,:])
+        plt.title("LMC Input")
+        plt.tight_layout()
+        plt.show()
         break
 
 #    for c in range(0,10):
